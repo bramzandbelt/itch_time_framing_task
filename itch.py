@@ -706,27 +706,13 @@ def init_config(runtime, mod_dir):
     else:
         config['apparatus']['rd']['client'] = hub.getDevice('response_device')
 
-    if config['mritrigger']['enable']:
-        trigger_port = config['mritrigger']['port']
-        trigger_baud = config['mritrigger']['baud']
-        config['apparatus']['td']['client'] = serial.Serial(trigger_port,
-                                                            trigger_baud,
-                                                            timeout=0.001)
-        config['apparatus']['td']['settings'] = {
-            'trigger_keys': config['mritrigger']['sync']}
-
-        # Print and clear events from trigger port
-        print(config['apparatus']['td']['client'].readlines())
-
-    else:
-        config['apparatus']['td']['client'] = None
-        config['apparatus']['td']['settings'] = None
-
     # Keyboard settings
     # -------------------------------------------------------------------------
     esc_keys = config['responses']['abort_keys']
+    trigger_keys = config['responses']['trigger_keys']
     toggle_keys = config['responses']['toggle_keys']
     config['apparatus']['kb']['settings'] = {'esc_keys': esc_keys,
+                                             'trigger_keys': trigger_keys,
                                              'toggle_keys': toggle_keys}
 
     kb = config['apparatus']['kb']['client']
@@ -1503,7 +1489,6 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
     hub             = config['apparatus']['hub']
     rd              = config['apparatus']['rd']
     kb              = config['apparatus']['kb']
-    td              = config['apparatus']['td']
     trial_stats      = config['statistics']['trial']
 
     trial_eval_data   = config['evaluation']['trial']
@@ -1573,7 +1558,6 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
                                    f_on_off,
                                    rd,
                                    kb,
-                                   td,
                                    trial_stats,
                                    trial_eval_data,
                                    feedback_dur,
@@ -1641,15 +1625,40 @@ def run_ip_procedure(config):
     hub = config['apparatus']['hub']
     rd = config['apparatus']['rd']
     kb = config['apparatus']['kb']
-    td = config['apparatus']['td']
     # trial_stats = config['statistics']['trial']
     ip_procedure = config['ip_procedure']
+
+    trial_ons = 0
+
+
+
+    # Run trial
+    run_trial(wait_for_trigger=True,
+              trial_ons=None,
+              hub=hub,
+              trial_log=None,
+              trial_timing=None,
+              window=window,
+              stim_list=None,
+              u=None,
+              f_on_f_off=None,
+              rd=rd,
+              kb=kb,
+              trial_stats=None,
+              trial_eval_data=None,
+              feedback_dur=None,
+              stimuli=None
+              )
+
+
+
+
 
     m_l = np.double(ip_procedure['m_l'])
     t_ls = np.double(ip_procedure['t_l'])
     t_s = np.double(ip_procedure['t_s'])
     t_units = ip_procedure['t_units']
-    n_staircase_trial = ip_procedure['n_staircase_trial']
+    n_staircase_steps= ip_procedure['n_staircase_trial']
     n_catch_ss = ip_procedure['n_catch_trial_ss']
     n_catch_ll = ip_procedure['n_catch_trial_ll']
     n_instr_check = ip_procedure['n_instr_manip_check_trial']
@@ -1660,8 +1669,9 @@ def run_ip_procedure(config):
     trials = n_catch_ss * ['catch_ss'] + \
              n_catch_ll * ['catch_ll'] + \
              n_instr_check * ['instr_check'] + \
-             n_staircase * ['staircase']
+             n_staircase_steps * ['staircase']
 
+    adjustment_factor = -1
 
 
     # Run Freye et al. indifference point procedure ===========================
@@ -1732,7 +1742,7 @@ def run_ip_procedure(config):
 
 
             # Run trial
-            run_trial(wait_for_trigger=False,
+            run_trial(wait_for_trigger=True,
                       trial_ons=None,
                       hub=hub,
                       trial_log=None,
@@ -1743,7 +1753,6 @@ def run_ip_procedure(config):
                       f_on_f_off=None,
                       rd=rd,
                       kb=kb,
-                      td=td,
                       trial_stats=None,
                       trial_eval_data=None,
                       feedback_dur=None,
@@ -1952,12 +1961,12 @@ def run_stage(config, stage_id, trial_list):
 
             # present_instruction(config, stage_id, block_ix)
 
-            this_block_log, all_crit_met = \
-                run_block(config=config,
-                          block_id=block_id,
-                          trial_list=trial_list_block,
-                          block_log=this_block_log,
-                          trial_ons_next_block=trial_ons_next_block)
+            # TODO: add output argument allCritMet
+            this_block_log = run_block(config=config,
+                                       block_id=block_id,
+                                       trial_list=trial_list_block,
+                                       block_log=this_block_log,
+                                       trial_ons_next_block=trial_ons_next_block)
 
             # Write block log
             # ---------------------------------------------------------
@@ -1986,7 +1995,7 @@ def run_stage(config, stage_id, trial_list):
             else:
                 break
 
-def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,window,stim_list,u,f_on_off,rd,kb,td,trial_stats,trial_eval_data,feedback_dur,stimuli):
+def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,window,stim_list,u,f_on_off,rd,kb,trial_stats,trial_eval_data,feedback_dur,stimuli):
     """
     Runs a trial
 
@@ -2033,9 +2042,6 @@ def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,windo
     kb              : dict
                     specifies keyboard properties
 
-    td              : dict
-                    specifies trigger device properties
-
     trial_stats      : dict
                     specifies which descriptive statistics need to be computed
 
@@ -2060,19 +2066,29 @@ def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,windo
     # -------------------------------------------------------------------------
     if wait_for_trigger:
         triggered = None
-        trigger_keys = td['settings']['trigger_keys']
+        esc_keys = kb['settings']['esc_keys']
+        trigger_keys = kb['settings']['trigger_keys']
 
         # Clear buffer
-        td['client'].readlines()
+        kb['client'].clearEvents()
 
-        while not triggered:
-            trigger_events = td['client'].readline()
+        # Show text stimulus: Wait for stimulus
+        wait_for_trigger_stim = pp.visual.TextStim(window)
+        stim_text = 'Press any of the following keys to continue: %s' % \
+                    ', '.join(str(x) for x in trigger_keys)
+        wait_for_trigger_stim.setText(stim_text)
+        wait_for_trigger_stim.draw()
+        window.flip()
 
-            for ev in trigger_events:
-                print 'Trigger received: %s' % (ev)
+        # Wait for trigger or abort keys to be pressed
+        evs = kb['client'].waitForKeys(keys=esc_keys + trigger_keys)
 
-                if any([re.findall(key,ev) for key in trigger_keys]):
-                    triggered = True
+        if set(esc_keys) & set([ev.key for ev in evs]):
+            print('Abort key pressed. Quit PsychoPy now!')
+            pp.core.quit()
+        elif set(trigger_keys) & set([ev.key for ev in evs]):
+            print('Trigger key pressed. Continue now!')
+            triggered = True
 
     if trial_ons == 0:
         # If this is the start of a session or block

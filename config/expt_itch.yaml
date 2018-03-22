@@ -778,6 +778,11 @@ responses:
     #                 interrupted.
     abort_keys: [escape,q]
 
+    # trigger_keys: list
+    #
+    # They keys with which the experiment can started.
+    trigger_keys: [return]
+
     # toggle_keys
     #
     # Keyboard keys to move backward and forward between instruction screens.
