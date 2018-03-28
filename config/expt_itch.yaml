@@ -522,10 +522,9 @@ instruction:
 #
 # This dictionary specifies the configuration of the stimuli in the experiment.
 # The following types of stimuli can be specified:
-# - cue:        cue stimulus (optional)
-# - fix:        fixation stimulus (optional)
-# - s1:         primary (go) stimulus
-# - s2:         secondary stimulus (signal)
+# - choice_instr: trial choice instruction
+# - ss_opt:       small-but-soon option
+# - ll_opt:       large-but-later option
 # - feedback:   trial feedback stimulus
 # - iti:        stimulus displayed during the intertrial interval
 #
@@ -568,43 +567,9 @@ stim_config:
         color: [255, 255, 255]
         opacity: 1
         font: Helvetica
-        height: 2
+        height: 1
         ori: 0
-        pos: [0, 2]
-
-    # fix: dictionary
-    #
-    # This dictionary specifies the configuration of the fixation stimulus.
-    # Information on stimulus onset and duration are specified in a comma-
-    # separated value (csv) file, see below.
-    fix:
-
-        # type: string
-        #
-        # The PsychoPy stimulus class of the instruction stimulus. Currently,
-        # only TextStim and ImageStim is supported.
-        #
-        type: TextStim
-
-        # name: identifier of the stimulus
-        #
-        # This key-value pair is not used by the code.
-        #
-        name: fix
-
-        # content: list
-        #
-        # This list of strings contains the stimuli (if type equals TextStim)
-        # or filenames of the stimuli (if type equals ImageStim).
-        # N.B. Unicode characters can be used as TextStim stimuli, but they
-        # should be between double-quotes (e.g. ["\u2666","\u2665"]).
-        #
-        color: [255,255,255]
-        opacity: 1
-        font: Helvetica
-        height: 2
-        ori: 0
-        pos: [0,0]
+        pos: [0, 4]
 
     # ss: dictionary
     #
@@ -640,9 +605,9 @@ stim_config:
         font: Helvetica
         color: [255,255,255]
         opacity: 1
-        height: 2
+        height: 1
         ori: 0
-        pos: [-8,0]
+        pos: [-6,0]
 
     # ll: dictionary
     #
@@ -672,9 +637,9 @@ stim_config:
         color: [255, 255, 255]
         opacity: 1
         font: Helvetica
-        height: 2
+        height: 1
         ori: 0
-        pos: [8,0]
+        pos: [6,0]
 
     # feedback: dictionary
     #
@@ -683,27 +648,27 @@ stim_config:
     # below. Stimulus content is currently determined through a comma-separated
     # value (csv) file, see below.
     #
-    feedback:
-
-        # type: string
-        #
-        # The PsychoPy stimulus class of the instruction stimulus. Currently,
-        # only TextStim and ImageStim is supported.
-        #
-        type: TextStim
-
-        # name: identifier of the stimulus
-        #
-        # This key-value pair is not used by the code.
-        #
-        name: feedback
-
-        color: [255,255,0]
-        opacity: 1
-        font: Helvetica
-        height: 2
-        ori: 0
-        pos: [4,0]
+#    feedback:
+#
+#        # type: string
+#        #
+#        # The PsychoPy stimulus class of the instruction stimulus. Currently,
+#        # only TextStim and ImageStim is supported.
+#        #
+#        type: TextStim
+#
+#        # name: identifier of the stimulus
+#        #
+#        # This key-value pair is not used by the code.
+#        #
+#        name: feedback
+#
+#        color: [255,255,0]
+#        opacity: 1
+#        font: Helvetica
+#        height: 1
+#        ori: 0
+#        pos: [0,0]
 
     # iti: dictionary
     #
@@ -724,11 +689,12 @@ stim_config:
         #
         # This key-value pair is not used by the code.
         #
+
         name: iti
         color: [255,255,255]
         opacity: 1
         font: Helvetica
-        height: 2
+        height: 1
         ori: 0
         pos: [0,0]
 
@@ -759,13 +725,8 @@ responses:
 #    The keys with which the subjects responds, separately for each response
     # device class.
     #
-    # If a response consists of multiple key presses, this is encoded as a list
-    # within a list. For example:
-    #
-    # [[a,b],[c,d]]
-    #
-    # This means that one response is associated with simultaneous key presses
-    # a and b, the other with key presses c and d.
+    # The first corresponds to the left-side option, the second to the
+    # right-side option.
     #
 
     response_keys_per_class:
@@ -816,7 +777,7 @@ practice:
     # trial_list_file
     #
     # Path to the .csv-file containing the trial list for the practice blocks
-    trial_list_file: data/3017031-05-Expt01/csvfiles/trialList_practice_taskVersionA.csv
+    trial_list_file: data/experiment/csvfiles/trial_list_practice.csv
     randomize_blocks: False
     randomize_trials: False
 
@@ -830,7 +791,7 @@ ip_procedure:
     # Monetary amount of LL option
     m_l: 43.52
     # Money units
-    m_units: "Euro"
+    m_units: "€"
     # Temporal delay to SS option
     t_s: 0
     # Temporal delay to LL option
@@ -845,6 +806,12 @@ ip_procedure:
     n_catch_trial_ll: 1
     # Number instruction manipulation check trials
     n_instr_manip_check_trial: 1
+    # Trial duration, in seconds
+    trial_dur: 3
+    # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
+    # times)
+    iti_dur: 1
+
 
 ###############################################################################
 # EXPERIMENT
@@ -855,7 +822,7 @@ experiment:
     #
     # Path to the .csv-file containing the trial list for the experimental
     # blocks
-    trial_list_file: data/experiment/csvfiles/trialList_experiment.csv
+    trial_list_file: data/experiment/csvfiles/trial_list_experiment.csv
     randomize_blocks: False
     randomize_trials: False
 
@@ -904,25 +871,6 @@ evaluation:
 ###############################################################################
 # FEEDBACK
 ###############################################################################
-#
-#
-#
-#
-#
-# feedback: dict
-#   trial: dict
-#       duration: float
-#       features: dict
-#           accuracy: boolean
-#           rt: boolean
-#           rt_diff: boolean
-#           nTrialCompleted: boolean
-#           nTrialLeft: boolean
-#   block: dict
-#       duration: float
-#
-#       features: dict
-
 
 feedback:
     trial:
