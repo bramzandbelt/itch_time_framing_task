@@ -64,9 +64,11 @@ class ExperimentRuntime(ppiohub.ioHubExperimentRuntime):
 
         # 2. Run indifference point procedure
         # ---------------------------------------------------------------------
-        # itch.run_ip_procedure(config)
-        # pp.core.quit()
+        ipp_trial_list = itch.make_trial_list(config)
 
+        itch.run_stage(config=config,
+                       stage_id='indifference_point_procedure',
+                       trial_list=ipp_trial_list)
 
         # 5. Run experimental blocks
         # ---------------------------------------------------------------------
