@@ -1442,8 +1442,8 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
     # =========================================================================
     frame_rate = config['window']['frame_rate']
     stimuli = config['stimuli']
-    ss_opt_pos = config['stimuli']['ss_opt'][0].pos
-    ll_opt_pos = config['stimuli']['ll_opt'][0].pos
+    ss_opt_pos = config['stim_config']['ss_opt']['pos']
+    ll_opt_pos = config['stim_config']['ll_opt']['pos']
     trial_stats = config['statistics']['trial']
     ip_procedure = config['ip_procedure']
     trial_eval_data = config['evaluation']['trial']
@@ -1555,6 +1555,8 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
 
         else:
             m_s = trial_list.loc[trial_list_ix, 'm_s']
+
+        this_trial_log['m_s'] = m_s
 
         # </editor-fold desc="2.1.3. Determine monetary amount SS option">
         # <editor-fold desc="2.1.4. Set stimulus text">
