@@ -791,13 +791,13 @@ ip_procedure:
     # Monetary amount of LL option
     m_l: 43.52
     # Money units
-    m_units: "€"
+    m_unit: "€"
     # Temporal delay to SS option
     t_s: 0
     # Temporal delay to LL option
     t_l: [2, 4, 8, 16, 32, 64, 128]
     # Temporal delay units
-    t_units: "days"
+    t_unit: "days"
     # Number of staircase trials
     n_staircase_trial : 8
     # Number of catch trials on which people should choose SS
@@ -807,7 +807,7 @@ ip_procedure:
     # Number instruction manipulation check trials
     n_instr_manip_check_trial: 1
     # Trial duration, in seconds
-    trial_dur: 3
+    trial_dur: 5
     # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
     # times)
     iti_dur: 1
