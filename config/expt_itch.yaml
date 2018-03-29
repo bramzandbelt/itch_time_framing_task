@@ -807,7 +807,7 @@ ip_procedure:
     # Number instruction manipulation check trials
     n_instr_manip_check_trial: 1
     # Trial duration, in seconds
-    trial_dur: 5
+    trial_dur: 3
     # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
     # times)
     iti_dur: 1
@@ -957,8 +957,7 @@ log:
     # If nothing specified, the log files will be written in a directory
     #
     #
-    dir: /Users/bramzandbelt/Dropbox/ScienceProjects/stpy/v0.1/log/
-
+    dir: /Users/bramzandbelt/surfdrive/projects/BEWITCHING/itch_time_framing_task/log/
 
     # runtime: dict
     #
