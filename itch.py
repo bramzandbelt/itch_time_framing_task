@@ -1637,7 +1637,10 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
         trial_ons = time.time()
 
         with open(config['log']['performance']['trial']['file'],'a+') as fileObj:
-            this_trial_log.to_csv(fileObj, index=False, header=False, na_rep=np.nan)
+            pd.DataFrame(this_trial_log).T.to_csv(fileObj,
+                                                  index=False,
+                                                  header=False,
+                                                  na_rep=np.nan)
 
         print 'Time needed to write trial_log: %.3f ms' % (1000.*(time.time() - trial_ons))
         # </editor-fold> # desc="2.4. Save this_trial_log"
