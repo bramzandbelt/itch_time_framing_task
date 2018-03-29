@@ -46,7 +46,7 @@ def collect_response(rd, kb, *args, **kwargs):
     kb          : dict
                 specifies keyboard properties
 
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log
 
     other_keys  : list (optional)
@@ -55,7 +55,7 @@ def collect_response(rd, kb, *args, **kwargs):
 
     Returns
     -------
-    log         : pandas.core.frame.DataFrame (optional)
+    log         : pandas.core.frame.Series (optional)
                 trial log; collect_responses fills in values for key_count and
                 key_time variables.
 
@@ -129,10 +129,10 @@ def collect_response(rd, kb, *args, **kwargs):
             # If any of the event keys are in event data
             if any([re.findall(key, ev.key) for key in rsp_keys]):
                 key_count[ev.key] += 1
-                if isinstance(log, pd.DataFrame):
+                if isinstance(log, pd.core.series.Series):
                     # Only log time of first response key event
                     if not any([key_time[key] for key in rsp_keys]):
-                        key_time[ev.key] = ev.time - log.iloc[0]['trial_ons']
+                        key_time[ev.key] = ev.time - log['trial_ons']
 
         elif rd_class == 'Serial':
 
@@ -157,33 +157,38 @@ def collect_response(rd, kb, *args, **kwargs):
 
                     # Only log time of first response key event
                     if not any([key_time[key] for key in rsp_keys]):
-                        key_time[ev.key] = ev.time - log.iloc[0]['trial_ons']
+                        key_time[ev.key] = ev.time - log['trial_ons']
 
     # For each key, only response times of first two events are stored
-    if isinstance(log, pd.DataFrame):
+    if isinstance(log, pd.core.series.Series):
 
 
         # Determine choice
-        choice_key, choice_time = \
-            next((k, v) for k, v in key_time.items() if v)
+        try:
+            choice_key, choice_time = \
+                next((k, v) for k, v in key_time.items() if v)
+        except StopIteration:
+            print 'The generator was empty'
+            choice_key = None
+            choice_time = float('inf')
 
-        if log.iloc[0]['ll_side'] == 'left':
+        if log['ll_side'] == 'left':
             key_mapping = dict(zip(rsp_keys, ('ll', 'ss')))
-        elif log.iloc[0]['ll_side'] == 'right':
+        elif log['ll_side'] == 'right':
             key_mapping = dict(zip(rsp_keys, ('ss', 'll')))
 
         # A choice can be made only once all relevant stimuli are onscreen,
         # so determine onset of last relevant stimulus
         last_stim_ons = \
-            max([log.iloc[0][col]
-                 for col in log.iloc[0].keys()
+            max([log[col]
+                 for col in log.keys()
                  if col in ['choice_instr_ons', 'ss_opt_ons', 'll_opt_ons']])
 
         # Log events
         for key in rsp_keys:
-            log.iloc[0]['key_count_' + key] = key_count[key]
-        log.iloc[0]['choice'] = key_mapping[choice_key]
-        log.iloc[0]['rt'] = choice_time - last_stim_ons
+            log['key_count_' + key] = key_count[key]
+        log['choice'] = key_mapping.get(choice_key, 'NA')
+        log['rt'] = choice_time - last_stim_ons
 
         return log
 
@@ -192,7 +197,16 @@ def collect_response(rd, kb, *args, **kwargs):
     else:
 
         return key_count, other_keys_pressed
+def copy_series_values(var_names, source_series, target_series):
+    assert isinstance(source_series, pd.core.frame.Series), \
+        'source_series should be of type pandas.core.frame.Series'
+    assert isinstance(target_series, pd.core.frame.Series), \
+        'target_series should be of type pandas.core.frame.Series'
 
+    for item in var_names:
+        target_series[item] = source_series[item]
+
+    return target_series
 def define_stimulus(window, stim_info, *args):
     # type: (object, object, object) -> object
     """
@@ -267,7 +281,7 @@ def define_stimulus(window, stim_info, *args):
             # based on input
 
 
-            # Set other parameters
+            # Set other parameters, if provided
             if 'font_file' in stim_info:
                 if stim_info['font_file']:
                     stimulus[i].fontFiles = stim_info['font_file']
@@ -289,6 +303,11 @@ def define_stimulus(window, stim_info, *args):
             if 'opacity' in stim_info:
                 if stim_info['opacity']:
                     stimulus[i].setOpacity(stim_info['opacity'])
+
+            # Set general TextStimulus parameters
+            stimulus[i].alignHoriz = 'center'
+            stimulus[i].alignVert = 'center'
+            stimulus[i].wrapWidth = 1000
 
         # Image stimuli
         # ---------------------------------------------------------------------
@@ -341,12 +360,12 @@ def evaluate_trial(eval_data,feedback_dur,window,stimuli,log):
                 specifies PsychoPy stimuli, including the feedback and inter-
                 trial interval stimulus
 
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log
 
     Returns
     -------
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log; evaluate_trial fills in values for the following
                 variables: trialCorrect, trialType, responseType, and
                 trialFeedback
@@ -454,10 +473,10 @@ def evaluate_trial(eval_data,feedback_dur,window,stimuli,log):
     #     print('responseType: \t %s' % (responseType))
     #     print('trialFeedback: \t %s' % (trialFeedback))
     #
-    # log.iloc[0]['trialCorrect']     = trialCorrect
-    # log.iloc[0]['trialType']        = trialType
-    # log.iloc[0]['responseType']     = responseType
-    # log.iloc[0]['trialFeedback']    = trialFeedback
+    # log['trialCorrect']     = trialCorrect
+    # log['trialType']        = trialType
+    # log['responseType']     = responseType
+    # log['trialFeedback']    = trialFeedback
 
     # SOA adjustments
     # =========================================================================
@@ -1301,12 +1320,12 @@ def present_stimuli(window, stim_list, u, f_on_off, log):
                 stimulus-by-2 array specifying the frame indices of stimulus
                 onset (first column) and stimulus offset (second column)
 
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log
 
     Returns
     -------
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log; present_stimuli fills in information about trial and
                 stimulus onsets and durations, as well as differences between
                 actual and planned onsets and durations
@@ -1348,22 +1367,22 @@ def present_stimuli(window, stim_list, u, f_on_off, log):
     stim_displayed = [stim.name for stim in stim_list]
 
     # Log
-    log.iloc[0]['trial_ons'] = trial_ons
-    log.iloc[0]['trial_dur'] = trial_dur
+    log['trial_ons'] = trial_ons
+    log['trial_dur'] = trial_dur
 
     for ix in range(len(stim_displayed) - 1):
         f_on, f_off = f_on_off[:, ix]
         ons = t_flip[f_on] - trial_ons
         dur = t_flip[f_off] - t_flip[f_on]
-        ons_intended = log.iloc[0][stim_displayed[ix] + '_ons']
-        dur_intended = log.iloc[0][stim_displayed[ix] + '_dur']
+        ons_intended = log[stim_displayed[ix] + '_ons']
+        dur_intended = log[stim_displayed[ix] + '_dur']
         ons_dt = ons - ons_intended
         dur_dt = dur - dur_intended
 
-        log.iloc[0][stim_displayed[ix] + '_ons'] = ons
-        log.iloc[0][stim_displayed[ix] + '_dur'] = dur
-        log.iloc[0][stim_displayed[ix] + '_ons_dt'] = ons_dt
-        log.iloc[0][stim_displayed[ix] + '_dur_dt'] = dur_dt
+        log[stim_displayed[ix] + '_ons'] = ons
+        log[stim_displayed[ix] + '_dur'] = dur
+        log[stim_displayed[ix] + '_ons_dt'] = ons_dt
+        log[stim_displayed[ix] + '_dur_dt'] = dur_dt
 
     return log
 
@@ -1400,52 +1419,70 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
 
     """
 
-    # 1. Process inputs
-    # =========================================================================
+    # 1. PROCESS INPUTS
+    # 1.1. Get task configurations
+    # 1.2. Define block and trial variables
+    # 1.3. Define indifference point procedure variables
+    # 2. RUN TRIALS
+    # 2.1. Define trial-specific variables
+    # 2.1.#. m_s
+    # 2.1.#. wait_for_trigger
+    # 2.1.#. side of choice options
+    # 2.1.#. others
+    # 2.2. Present stimuli and collect responses
+    # 2.3. Log timings
+    # 3. COMPUTE BLOCK STATISTICS
+    # 4. RETURN VARIABLES
 
-    # All relevant variables and objects
-    window  = config['window']['window']
+    # <editor-fold desc="1. PROCESS INPUTS">
+    # 1. PROCESS INPUTS
+    ###########################################################################
+    # <editor-fold desc="1.1. Get task configurations">
+    # 1.1. Get task configurations
+    # =========================================================================
+    frame_rate = config['window']['frame_rate']
     stimuli = config['stimuli']
-    hub = config['apparatus']['hub']
-    rd = config['apparatus']['rd']
-    kb = config['apparatus']['kb']
+    ss_opt_pos = config['stimuli']['ss_opt'][0].pos
+    ll_opt_pos = config['stimuli']['ll_opt'][0].pos
     trial_stats = config['statistics']['trial']
     ip_procedure = config['ip_procedure']
-
     trial_eval_data = config['evaluation']['trial']
     feedback_dur = config['feedback']['trial']['duration']
     sess_columns = config['log']['performance']['sess_columns']
     sess_data = config['log']['performance']['sess_data']
+    trial_cols = config['log']['performance']['trial']['columns']
 
+    # </editor-fold> # desc="1.1. Get task configurations"
+    # <editor-fold desc="1.2. Define block and trial variables">
+    # 1.2. Define block and trial variables
+    # =========================================================================
+
+    # Block index
     block_ix = trial_list.iloc[0]['block_ix']
 
-
-    # If this is the indifference point procedure
-    # if block_id.startswith('i'):
-    #     m_l = float(config['ip_procedure']['m_l'])
-    #     m_s = m_l * 0.5
-    #     m_units = config['ip_procedure']['m_units']
-    #     t_l_list = config['ip_procedure']['t_l']
-    #     t_s = int(config['ip_procedure']['t_s'])
-    #     t_units = config['ip_procedure']['t_units']
-
-    # Define dynamic variables
-    # -------------------------------------------------------------------------
+    # Block onset: -Inf means that the block starts immediately
+    block_ons = -float('inf')
 
     # Mock times, so that trial starts immediately
     trial_timing = {'ons': -float('inf'),
                     'dur': 0,
                     'iti_dur': 0,
-                    'refresh_time': 1/config['window']['frame_rate']}
-    block_ons = -float('inf')
+                    'refresh_time': 1 / frame_rate}
 
-    # =========================================================================
+    # Put trial_list indices in a list for easy reference
     trial_list_ixs = trial_list.index.tolist()
-    trial_cols = config['log']['performance']['trial']['columns']
-    trial_log = pd.DataFrame(index = trial_list_ixs,
+
+    # Init trial_log
+    trial_log = pd.DataFrame(index=trial_list_ixs,
                              columns=trial_cols)
 
-    # If this is the indifference point procedure
+
+    # </editor-fold desc="1.2. Define block and trial variables"> #
+    # <editor-fold desc="1.3. Define indifference point procedure variables">
+    # 1.3. Define indifference point procedure variables
+    # =========================================================================
+
+
     if block_id.startswith('i'):
 
         i_step = iter(range(ip_procedure['n_staircase_trial']))
@@ -1453,151 +1490,203 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
 
         step_size = m_l * 2 ** -(next(i_step) + 1)
         adjustment_factor = -1
-        m_s = m_l + adjustment_factor * step_size
+        m_s_staircase = m_l + adjustment_factor * step_size
 
-    # Present trials
-    # =========================================================================
-
+    # </editor-fold desc="1.3. Define indifference point procedure variables">
+    # </editor-fold desc="1. PROCESS INPUTS"> #
+    # <editor-fold desc="2. RUN TRIALS">
+    # 2. RUN TRIALS
+    ###########################################################################
     for trial_list_ix in trial_list_ixs:
 
-        # Prepare trial
+        # <editor-fold desc="2.1. Define trial-specific variables">
+        # 2.1. Define trial-specific variables
+        # =====================================================================
+        # <editor-fold desc="2.1.1. Initiate this_trial_log">
+        # 2.1.1. Initiate variable for logging this trial's events
         # ---------------------------------------------------------------------
-        # TODO: Change to pd.Series? e.g. this_trial_log = pd.Series(index = trial_cols)
-        this_trial_log = pd.DataFrame(index = [trial_list_ix],
-                                      columns = trial_cols)
+        this_trial_log = \
+            copy_series_values(var_names=['session_ix', 'block_ix', 'trial_ix',
+                                          'trial_type', 'wait_for_trigger',
+                                          'framing', 'm_l', 'm_unit', 't_s',
+                                          't_l', 't_unit'],
+                               source_series=trial_list.loc[trial_list_ix],
+                               target_series=pd.Series(index=trial_cols))
+        this_trial_log['block_id'] = block_id
+        this_trial_log[sess_columns] = sess_data
 
-        # If this is the indifference point procedure
-        if block_id.startswith('i'):
-            if trial_list.loc[trial_list_ix, 'trial_type'] in ['catch_ss',
-                                                               'catch_ll',
-                                                               'instr_check']:
+        # </editor-fold desc="2.1.1. Initiate this_trial_log">
+        # <editor-fold desc="2.1.2. Set side of choice stimulus">
+        # 2.1.2. Set side of choice stimulus
+        # ---------------------------------------------------------------------
 
-                # Set monetary amount of SS option
-                m_s = {'catch_ss': ip_procedure['m_l'],
-                       'catch_ll': 0,
-                       'instr_check': m_s}
+        # Get default positions of smaller-sooner and larger-later options
+        x_ss, y_ss = ss_opt_pos
+        x_ll, y_ll = ll_opt_pos
 
-            elif trial_list.loc[trial_list_ix, 'trial_type'] == 'standard':
-                # TODO: Set m_s to correct amount
-                m_s = m_s
-
-        this_trial_log.iloc[0]['trial_type'] = \
-            trial_list.loc[trial_list_ix, 'trial_type']
-
-        # Check if program should wait for trigger
-        if 'wait_for_trigger' in trial_list.columns:
-            wait_for_trigger = trial_list.ix[trial_list_ix]['wait_for_trigger']
-        else:
-            wait_for_trigger = False
-
-        trial_ons = trial_list.loc[trial_list_ix,'trial_ons']
-
-        # Randomly determine side of SS and LL option
-        x_ss, y_ss = config['stimuli']['ss_opt'][0].pos
-        x_ll, y_ll = config['stimuli']['ll_opt'][0].pos
-
+        # Randomly determine side, then update and log position
         if random.random() < 0.5:
             stimuli['ss_opt'][0].pos = (x_ss, y_ss)
             stimuli['ll_opt'][0].pos = (x_ll, y_ll)
-            this_trial_log.iloc[0]['ll_side'] = 'right'
+            this_trial_log['ll_side'] = 'right'
         else:
             # Swap sides
             stimuli['ss_opt'][0].pos = (x_ll, y_ll)
             stimuli['ll_opt'][0].pos = (x_ss, y_ss)
-            this_trial_log.iloc[0]['ll_side'] = 'left'
+            this_trial_log['ll_side'] = 'left'
 
+        # </editor-fold desc="2.1.2. Set side of choice stimulus">
+        # <editor-fold desc="2.1.3. Determine monetary amount SS option">
+        # 2.1.3. Determine monetary amount of the smaller-sooner option
+        # ---------------------------------------------------------------------
+        if block_id.startswith('i'):
+
+            trial_type = trial_list.loc[trial_list_ix, 'trial_type']
+
+            if trial_type in ['catch_ss', 'catch_ll', 'instr_check']:
+
+                # Set monetary amount of SS option
+                m_s = {'catch_ss': ip_procedure['m_l'],
+                       'catch_ll': 0,
+                       'instr_check': m_s_staircase}[trial_type]
+
+            elif trial_type == 'standard':
+                m_s = m_s_staircase
+
+        else:
+            m_s = trial_list.loc[trial_list_ix, 'm_s']
+
+        # </editor-fold desc="2.1.3. Determine monetary amount SS option">
+        # <editor-fold desc="2.1.4. Set stimulus text">
+        # 2.1.4. Set stimulus text
+        # ---------------------------------------------------------------------
         for stimulus in ['choice_instr', 'ss_opt', 'll_opt']:
-            stimuli[stimulus][0].alignHoriz = 'center'
-            stimuli[stimulus][0].alignVert = 'center'
-            stimuli[stimulus][0].wrapWidth = 1000
-
             stimuli[stimulus][0].setText(
                 make_stim_str(stim=stimulus,
-                              framing=trial_list.loc[trial_list_ix,'framing'],
-                              m_unit=trial_list.loc[trial_list_ix,'m_units'],
+                              framing=trial_list.loc[
+                                  trial_list_ix, 'framing'],
+                              m_unit=trial_list.loc[
+                                  trial_list_ix, 'm_unit'],
                               m_s=m_s,
-                              m_l=trial_list.loc[trial_list_ix,'m_l'],
-                              t_unit=trial_list.loc[trial_list_ix,'t_units'],
-                              t_s=trial_list.loc[trial_list_ix,'t_s'],
-                              t_l=trial_list.loc[trial_list_ix,'t_l'])
+                              m_l=trial_list.loc[trial_list_ix, 'm_l'],
+                              t_unit=trial_list.loc[
+                                  trial_list_ix, 't_unit'],
+                              t_s=trial_list.loc[trial_list_ix, 't_s'],
+                              t_l=trial_list.loc[trial_list_ix, 't_l'])
             )
-
-        # Fill in session data
+        # </editor-fold desc="2.1.4. Set stimulus text">
+        # <editor-fold desc="2.1.5. Determine stimulus on/offset in frames">
+        # 2.1.5. Determine stimulus on/offset in frame units
         # ---------------------------------------------------------------------
-        this_trial_log.loc[trial_list_ix,sess_columns] = sess_data
-
         this_trial_log, stim_list, u, f_on_off, trial_dur = \
-            stim_to_frame_mat(config,
-                              trial_list.ix[trial_list_ix],
-                              this_trial_log)
-
-        t_trial_ready = config['clock'].getTime()
-        print 'Trial %d ready to start: t = %f s, dt = %f ms' % (trial_list_ix, t_trial_ready, 1000*(t_trial_ready - trial_ons))
-
-        # Run trial
-        # ---------------------------------------------------------------------
-        this_trial_log = run_trial(config,
-                                   wait_for_trigger,
-                                   trial_ons,
-                                   hub,
-                                   this_trial_log,
-                                   trial_timing,
-                                   window,
-                                   stim_list,
-                                   u,
-                                   f_on_off,
-                                   rd,
-                                   kb,
-                                   trial_stats,
-                                   trial_eval_data,
-                                   feedback_dur,
-                                   stimuli)
-
-        # Log trial data not logged inside run_trial
-        # ---------------------------------------------------------------------
-        this_trial_log.loc[trial_list_ix,'block_id'] = block_id
-        this_trial_log.loc[trial_list_ix,'block_ix'] = block_ix
-        this_trial_log.loc[trial_list_ix,'trial_ix'] = trial_list.ix[
-            trial_list_ix]['trial_ix']
+            stim_to_frame_mat(config=config,
+                              trial=trial_list.ix[trial_list_ix],
+                              log=this_trial_log)
+        # </editor-fold desc="2.1.5. Determine stimulus on/offset in frames">
+        # </editor-fold> # desc="2.1. Define trial-specific variables"
+        # <editor-fold> # desc="2.2. Present stimuli and collect responses"
+        # 2.2. Present stimuli and collect responses
+        # =====================================================================
+        this_trial_log = \
+            run_trial(config=config,
+                      window=config['window']['window'],
+                      hub=config['apparatus']['hub'],
+                      rd=config['apparatus']['rd'],
+                      kb=config['apparatus']['kb'],
+                      wait_for_trigger=trial_list.loc[trial_list_ix,
+                                                      'wait_for_trigger'],
+                      trial_ons=trial_list.loc[trial_list_ix,
+                                                      'trial_ons'],
+                      trial_log=this_trial_log,
+                      trial_timing=trial_timing,
+                      trial_stats=trial_stats,
+                      trial_eval_data=trial_eval_data,
+                      stimuli=stimuli,
+                      stim_list=stim_list,
+                      u=u,
+                      f_on_off=f_on_off,
+                      feedback_dur=feedback_dur
+                      )
+        # </editor-fold> # desc="2.2. Present stimuli and collect responses"
+        # <editor-fold> # desc="2.3. Log timings"
+        # 2.3. Log timings
+        # =====================================================================
 
         # Session timing
-        sm, ss = divmod(this_trial_log['trial_ons'].item(), 60)
+        sm, ss = divmod(this_trial_log['trial_ons'], 60)
         sh, sm = divmod(sm, 60)
-        this_trial_log.loc[trial_list_ix,'t_session']    = '%d:%02d:%02d' % (sh, sm, ss)
+        this_trial_log['t_session'] = '%d:%02d:%02d' % (sh, sm, ss)
 
         # Block timing
         if trial_list_ix == trial_list_ixs[0]:
-            block_ons = this_trial_log['trial_ons'].item()
-        bs, bms = divmod(this_trial_log['trial_ons'].item() - block_ons,1)
+            block_ons = this_trial_log['trial_ons']
+        bs, bms = divmod(this_trial_log['trial_ons'] - block_ons,1)
         bm, bs = divmod(bs, 60)
         bh, bm = divmod(bm, 60)
-        this_trial_log.loc[trial_list_ix,'tBlock']      = '%d:%02d:%02d.%03d' % (bh, bm, bs,bms*1000)
+        this_trial_log['t_block'] = '%d:%02d:%02d.%03d' % (bh, bm, bs,bms*1000)
+
+        # </editor-fold> # desc="2.3. Log timings"
+        # <editor-fold> # desc="2.4. Save this_trial_log"
+        # 2.4. Save this_trial_log
+        # =====================================================================
 
         # Put trial data into data frame and file
         # ---------------------------------------------------------------------
-        trial_log.iloc[trial_list_ix] = this_trial_log.iloc[trial_list_ix]
+        trial_log.loc[trial_list_ix] = this_trial_log
 
-        trial_ons = time.time();
+        trial_ons = time.time()
 
         with open(config['log']['performance']['trial']['file'],'a+') as fileObj:
             this_trial_log.to_csv(fileObj, index=False, header=False, na_rep=np.nan)
 
         print 'Time needed to write trial_log: %.3f ms' % (1000.*(time.time() - trial_ons))
+        # </editor-fold> # desc="2.4. Save this_trial_log"
+        # <editor-fold> # desc="2.5. Update monetary amount of SS option"
+        # 2.5. Update monetary amount of smaller-sooner option
+        # =====================================================================
 
-        # Update m_s for upcoming trial
-        # ---------------------------------------------------------------------
         if block_id.startswith('i'):
 
-            if trial_list.loc[trial_list_ix, 'trial_type'] == 'standard':
+            # Only update m_s and adjustment factor when trial was a
+            # standard trial
+            if trial_type in ['catch_ss', 'catch_ll', 'instr_check']:
+                pass
+            elif trial_type == 'standard':
 
-                step_size = m_l * 2 ** -(next(i_step) + 1)
+                try:
+                    step_size = m_l * 2 ** -(next(i_step) + 1)
+                except StopIteration:
+                    break
+
+                # Set adjustment factor according ot choice; if no choice is
+                # made, do not adjust m_s
+
+                # If LL chosen on this trial, then the SS offer will be
+                # increased on the next trial; if SS chosen on this trial,
+                # then the SS offer will be decreased on the next trial. If
+                # no choice is made, do not adjust m_s and repeat this trial.
 
                 adjustment_factor = \
                     {'ss': -1,
-                     'll': 1}[this_trial_log.loc[trial_list_ix, 'choice']]
+                     'll': 1}.get(this_trial_log['choice'], 0)
 
-                m_s = m_s + adjustment_factor * step_size
+                m_s_staircase = m_s_staircase + adjustment_factor * step_size
 
+                if __debug__:
+                    print('Step size: {0:s} {1:.2f}'.
+                          format(ip_procedure['m_unit'], step_size))
+                    print('Adjustment factor: {0:d}'.
+                          format(adjustment_factor))
+                    print('Monetary amount SS option next trial: {0:s}{1:.2f}'.
+                          format(ip_procedure['m_unit'], + m_s_staircase))
+        else:
+            pass
+
+
+        # </editor-fold> # desc="2.5. Update monetary amount of SS option"
+    # </editor-fold desc="2. RUN TRIALS">
+    # <editor-fold desc="3. COMPUTE BLOCK STATISTICS">
+    # 3. COMPUTE BLOCK STATISTICS
 
     # Compute block stats
     # =========================================================================
@@ -1608,9 +1697,12 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
     #                             block_log = block_log,
     #                             trial_ons_next_block=trial_ons_next_block)
 
-    return block_log #, all_crit_met
-
-
+    ###########################################################################
+    # </editor-fold desc="3. COMPUTE BLOCK STATISTICS">
+    # <editor-fold desc="4. RETURN VARIABLES">
+    # 4. RETURN VARIABLES
+    return block_log  # , all_crit_met
+    # </editor-fold desc="4. RETURN VARIABLES">
 
 def make_stim_str(stim, framing, m_unit, m_s, m_l, t_unit, t_s, t_l):
     """
@@ -1625,6 +1717,28 @@ def make_stim_str(stim, framing, m_unit, m_s, m_l, t_unit, t_s, t_l):
     :param t_l:
     :return:
     """
+
+    assert any([isinstance(stim, str), isinstance(stim, unicode)]), \
+        'stim should be of type srr or unicode'
+    assert any([isinstance(framing, str), isinstance(framing, unicode)]), \
+        'framing should be of type srr or unicode'
+    assert any([isinstance(m_unit, str), isinstance(m_unit, unicode)]), \
+        'm_unit should be of type srr or unicode'
+    assert any([isinstance(m_s, float), isinstance(m_s, int)]), \
+        'm_s should be of type float or int'
+    assert any([isinstance(m_l, float), isinstance(m_l, int)]), \
+        'm_l should be of type float or int'
+    assert any([isinstance(t_unit, str), isinstance(t_unit, unicode)]), \
+        't_unit should be of type srr or unicode'
+    assert any([isinstance(t_s, float), isinstance(t_s, int)]), \
+        't_s should be of type float or int'
+    assert any([isinstance(t_l, float), isinstance(t_l, int)]), \
+        't_l should be of type float or int'
+
+
+
+
+
 
     # Anonymous function for adjusting temporal delay in strings:
     # - replace "in 0 days" with "today"
@@ -1692,7 +1806,10 @@ def make_stim_str(stim, framing, m_unit, m_s, m_l, t_unit, t_s, t_l):
                 first_row = '{0:s}'.format('As planned, receive:')
 
         # Second row: monetary amount
-        second_row = '{0:s} {1:.2f}'.format(m_unit, m)
+        try:
+            second_row = '{0:s} {1:.2f}'.format(m_unit, m)
+        except ValueError:
+            print('Oops! Something went wrong!')
 
         # Third row: temporal delay
         if framing == 'date':
@@ -1753,9 +1870,9 @@ def make_trial_list(config):
     trial_list['framing'] = 'neutral'
     trial_list['m_s'] = None
     trial_list['m_l'] = ip_procedure['m_l']
-    trial_list['m_units'] = ip_procedure['m_units']
+    trial_list['m_unit'] = ip_procedure['m_unit']
     trial_list['t_s'] = ip_procedure['t_s']
-    trial_list['t_units'] = ip_procedure['t_units']
+    trial_list['t_unit'] = ip_procedure['t_unit']
     trial_list['choice_instr_ons'] = 0
     trial_list['choice_instr_dur'] = trial_dur
     trial_list['ss_opt_ons'] = 0
@@ -1765,7 +1882,7 @@ def make_trial_list(config):
 
     col_order = ['session_ix', 'block_ix', 'trial_ix', 'trial_ons',
                  'wait_for_trigger', 'framing', 'trial_type', 'm_s', 'm_l',
-                 'm_units', 't_s', 't_l', 't_units', 'choice_instr_ons',
+                 'm_unit', 't_s', 't_l', 't_unit', 'choice_instr_ons',
                  'choice_instr_dur', 'ss_opt_ons', 'ss_opt_dur',
                  'll_opt_ons', 'll_opt_dur']
 
@@ -1817,10 +1934,10 @@ def run_ip_procedure(config):
     ip_procedure = config['ip_procedure']
 
     m_l = float(ip_procedure['m_l'])
-    m_units = ip_procedure['m_units']
+    m_unit = ip_procedure['m_unit']
     t_l_list = ip_procedure['t_l']
     t_s = int(ip_procedure['t_s'])
-    t_units = ip_procedure['t_units']
+    t_unit = ip_procedure['t_unit']
 
     m_s = m_l * 0.5
 
@@ -1857,10 +1974,10 @@ def run_ip_procedure(config):
                           'framing': framing,
                           'm_s': 0,
                           'm_l': m_l,
-                          'm_units': m_units,
+                          'm_unit': m_unit,
                           't_s': t_s,
                           't_l': t_l,
-                          't_units': t_units,
+                          't_unit': t_unit,
                           'choice_instr_ons': 0,
                           'choice_instr_dur': 10,
                           'ss_opt_ons': 2,
@@ -1903,12 +2020,12 @@ def run_ip_procedure(config):
             if random.random() < 0.5:
                 stimuli['ss_opt'][0].pos = (x_ss, y_ss)
                 stimuli['ll_opt'][0].pos = (x_ll, y_ll)
-                this_trial_log.iloc[0]['ll_side'] = 'right'
+                this_trial_log['ll_side'] = 'right'
             else:
                 # Swap sides
                 stimuli['ss_opt'][0].pos = (x_ll, y_ll)
                 stimuli['ll_opt'][0].pos = (x_ss, y_ss)
-                this_trial_log.iloc[0]['ll_side'] = 'left'
+                this_trial_log['ll_side'] = 'left'
 
 
             for stimulus in ['choice_instr', 'ss_opt', 'll_opt']:
@@ -1919,10 +2036,10 @@ def run_ip_procedure(config):
                 stimuli[stimulus][0].setText(
                     make_stim_str(stim=stimulus,
                                   framing=framing,
-                                  m_unit=m_units,
+                                  m_unit=m_unit,
                                   m_s=m_s,
                                   m_l=m_l,
-                                  t_unit=t_units,
+                                  t_unit=t_unit,
                                   t_s=t_s,
                                   t_l=t_l)
                 )
@@ -1957,7 +2074,7 @@ def run_ip_procedure(config):
     m_l = np.double(ip_procedure['m_l'])
     t_ls = np.double(ip_procedure['t_l'])
     t_s = np.double(ip_procedure['t_s'])
-    t_units = ip_procedure['t_units']
+    t_unit = ip_procedure['t_unit']
 
 
     m_s = np.around(m_l, decimals = 2) * 0.5
@@ -2128,11 +2245,11 @@ def run_ip_procedure(config):
 
 
     # dt = 3
-    # t_units = 'days'
+    # t_unit = 'days'
     #
     #
     #
-    # my_date = calendar.datetime.datetime.today() +  bla[t_units]
+    # my_date = calendar.datetime.datetime.today() +  bla[t_unit]
     # my_date.strftime('%B %d, %Y')
     #
     # window = config['window']['window']
@@ -2143,7 +2260,7 @@ def run_ip_procedure(config):
     # m_l = 43.52
     # t_s = 0
     # t_l = 4
-    # m_units = 'Euro'
+    # m_unit = 'Euro'
     #
     #
     # if framing in ['neutral', 'delay', 'defer', 'speedup']:
@@ -2153,14 +2270,14 @@ def run_ip_procedure(config):
 
 
 
-    # ss_str = fmt_str_choice_opt % (m_units, m_s, t_s, t_units)
-    # ll_str = fmt_str_choice_opt % (m_units, m_s, t_s, t_units)
+    # ss_str = fmt_str_choice_opt % (m_unit, m_s, t_s, t_unit)
+    # ll_str = fmt_str_choice_opt % (m_unit, m_s, t_s, t_unit)
 
     # sprintf(    fmt_str_neutral
 
 
     # fmt_str_choice_option = {'neutral': "%s %.2f in %.0f %s", m_s, t_s, \
-    #                         t_units}
+    #                         t_unit}
 
 
     strFormatPerformance = '%s_Study_%s_TaskVersion_%s_Group_%.2d_Subject_%.3d'
@@ -2274,25 +2391,28 @@ def run_stage(config, stage_id, trial_list):
                 this_block_log.to_csv(fileObj, index=False, header=False,
                                       na_rep=np.nan)
 
-            if force_repeat:
-                if not all_crit_met:
-                    if n_iter == (max_n_iter - 1):
-                        present_instruction(config, 'block_repeat', 1)
-                        present_instruction(config, 'end')
-                        pp.core.wait(5)
-                        pp.core.quit()
-                    else:
-                        n_iter = n_iter + 1
+            # TODO: implement force_repeat procedure
+            # if force_repeat:
+            #     if not all_crit_met:
+            #         if n_iter == (max_n_iter - 1):
+            #             present_instruction(config, 'block_repeat', 1)
+            #             present_instruction(config, 'end')
+            #             pp.core.wait(5)
+            #             pp.core.quit()
+            #         else:
+            #             n_iter = n_iter + 1
+            #
+            #             # Warn subject that block will be repeated
+            #             present_instruction(config, 'block_repeat', 0)
+            #
+            #             # Reset clock to trial_ons in trial_list
+            #             # config['clock']['tracking'].reset(trial_list_block.iloc[0]['trial_ons'])
+            #             config['clock'].reset(
+            #                 trial_list_block.iloc[0]['trial_ons'])
+            # else:
+            #     break
 
-                        # Warn subject that block will be repeated
-                        present_instruction(config, 'block_repeat', 0)
-
-                        # Reset clock to trial_ons in trial_list
-                        # config['clock']['tracking'].reset(trial_list_block.iloc[0]['trial_ons'])
-                        config['clock'].reset(
-                            trial_list_block.iloc[0]['trial_ons'])
-            else:
-                break
+            all_crit_met = True
 
 def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,window,stim_list,u,f_on_off,rd,kb,trial_stats,trial_eval_data,feedback_dur,stimuli):
     """
@@ -2312,7 +2432,7 @@ def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,windo
     hub             : psychopy.iohub.client.ioHubConnection
                     interface to the ioHub
 
-    trial_log        : pandas.core.frame.DataFrame
+    trial_log        : pandas.core.frame.Series
                     empty trial log
 
     trial_timing     : dict
@@ -2355,7 +2475,7 @@ def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,windo
 
     Returns
     -------
-    trial_log        : pandas.core.frame.DataFrame
+    trial_log        : pandas.core.frame.Series
                     trial log
 
 
@@ -2463,12 +2583,12 @@ def stim_to_frame_mat(config,trial,log):
     trial       : pandas.core.series.Series
                 boolean array acting as selector of trials (rows)
 
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log
 
     Returns
     -------
-    log         : pandas.core.frame.DataFrame
+    log         : pandas.core.frame.Series
                 trial log; stim_to_frame_mat fills in stimulus properties,
                 including information about onsets, durations
 
@@ -2490,8 +2610,6 @@ def stim_to_frame_mat(config,trial,log):
 
     """
 
-    trial_log_ix = log.index.tolist()[0]
-
     stimuli = config['stimuli']
 
     def append_it(trial,log,stim,stim_list,ons,dur):
@@ -2504,7 +2622,7 @@ def stim_to_frame_mat(config,trial,log):
         trial       : pandas.core.series.Series
                     trial data
 
-        log         : pandas.core.frame.DataFrame
+        log         : pandas.core.frame.Series
                     trial log
 
         stim        : str or unicode
@@ -2530,7 +2648,7 @@ def stim_to_frame_mat(config,trial,log):
         new_dur      : numpy.ndarray
                     array of stimulus durations
 
-        log         : pandas.core.frame.DataFrame
+        log         : pandas.core.frame.Series
                     trial log
 
         """
@@ -2547,12 +2665,11 @@ def stim_to_frame_mat(config,trial,log):
         new_ons = np.hstack([ons,stim_ons])
         new_dur = np.hstack([dur,stim_dur])
 
-            # log.loc[trial_log_ix,[stim + '_ix']] = i
 
             # N.B. These are the intended stimulus onsets and durations. They
             # are replace by the actual onsets and durations in present_stimuli
-        log.loc[trial_log_ix,[stim + '_ons']] = stim_ons
-        log.loc[trial_log_ix,[stim + '_dur']] = stim_dur
+        log[stim + '_ons'] = stim_ons
+        log[stim + '_dur'] = stim_dur
 
         # else:
         #     new_ons = ons
