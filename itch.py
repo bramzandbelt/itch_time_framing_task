@@ -16,6 +16,7 @@ import re
 import serial
 import time
 import itertools as it
+import warnings
 
 from pprint import pprint
 from psychopy.hardware.emulator import launchScan
@@ -27,7 +28,62 @@ print 'pandas version: %s' % pd.__version__
 # This is to enable printing of all data frame columns
 pd.set_option('display.max_columns', None)
 
+def check_df_from_csv_file(df):
+    """
+    <SUMMARY LINE>
 
+    <EXTENDED DESCRIPTION>
+
+    Parameters
+    ----------
+    <NAME> : <TYPE>
+        <DESCRIPTION>
+
+    Returns
+    -------
+    <NAME> : <TYPE>
+        <DESCRIPTION>
+
+    Raises
+    ------
+    <EXCEPTIONS>
+
+    Usage
+    -----
+    <USAGE>
+
+    Example
+    -------
+    <EXAMPLE THAT CAN IDEALLY BE COPY PASTED>
+    """
+
+    # Index (*Ix) and keycount (keycount*) columns should be of type object
+    # This is to guarantee that NA and integers can be represented. Floats would
+    # cause problems.
+
+    # cols = [col for col in df.select_dtypes(exclude = ['int'])
+    #           if col.endswith('Ix') or col.startswith('keyCount')]
+    # for col in cols:
+    #     df[col] = df[col].astype('object')
+
+
+    # if os.path.isfile(trialListFile):
+    #     trialList = pd.read_csv(trialListFile)
+    #     ixCols = [col for col in trialList if re.search('Ix$',col)]
+    #
+    #
+    #     # Assertions
+    #     # ---------------------------------------------------------------------
+    #     for col in ixCols:
+    #         assert trialList[col].dtype == np.int or \
+    #                all(trialList['cueIx'].isnull()), \
+    #             'column {} in file {} contains data other than integers'.format(col,trialListFile)
+    #
+    #
+    #
+    #     config['practice']['trialList'] = trialList
+
+    return df
 def collect_response(rd, kb, *args, **kwargs):
     """
     Collect responses from response device and keyboard
@@ -261,8 +317,9 @@ def define_stimulus(window, stim_info, *args):
 
         assert (type(stimulus[i]) is
                 pp.visual.text.TextStim or
+                pp.visual.rect.Rect or
                 pp.visual.image.ImageStim), \
-                "stimulus is neither a TextStim nor an ImageStim"
+                "stimulus is neither a TextStim, nor a Rect, nor an ImageStim"
 
         # Set stimulus name
         stimulus[i].name = stim_type
@@ -309,6 +366,43 @@ def define_stimulus(window, stim_info, *args):
             stimulus[i].alignVert = 'center'
             stimulus[i].wrapWidth = 1000
 
+        # Rectangles
+        # ---------------------------------------------------------------------
+        elif type(stimulus[i]) is pp.visual.Rect:
+
+
+            if 'height' in stim_info:
+                if stim_info['height']:
+                    stimulus[i].setHeight(stim_info['height'])
+
+            if 'width' in stim_info:
+                if stim_info['width']:
+                    stimulus[i].setWidth(stim_info['width'])
+            if 'pos' in stim_info:
+                if stim_info['pos']:
+                    stimulus[i].setPos(stim_info['pos'])
+            if 'ori' in stim_info:
+                if stim_info['ori']:
+                    stimulus[i].setOri(stim_info['ori'])
+
+            if 'fill_color' in stim_info:
+                if stim_info['fill_color']:
+                    stimulus[i].setFillColor(stim_info['fill_color'], 'rgb255')
+
+            if 'line_color' in stim_info:
+                if stim_info['line_color']:
+                    stimulus[i].setLineColor(stim_info['line_color'], 'rgb255')
+
+            if 'line_width' in stim_info:
+                if stim_info['line_width']:
+                    stimulus[i].setLineWidth(stim_info['line_width'])
+
+            if 'opacity' in stim_info:
+                if stim_info['opacity']:
+                    stimulus[i].setOpacity(stim_info['opacity'])
+
+
+
         # Image stimuli
         # ---------------------------------------------------------------------
         else:
@@ -338,7 +432,7 @@ def evaluate_trial(eval_data,feedback_dur,window,stimuli,log):
                                 accuracy for each of the stimulus-response
                                 combinations
 
-                responseType    : pandas.core.series.Series
+                response_type    : pandas.core.series.Series
                                 response type for each of the stimulus-response
                                 combinations
 
@@ -346,7 +440,7 @@ def evaluate_trial(eval_data,feedback_dur,window,stimuli,log):
                                 feedback for each of the stimulus-response
                                 combinations
 
-                trialType       : pandas.core.series.Series
+                trial_type       : pandas.core.series.Series
                                 trial type for each of the stimulus-response
                                 combinations
 
@@ -367,8 +461,8 @@ def evaluate_trial(eval_data,feedback_dur,window,stimuli,log):
     -------
     log         : pandas.core.frame.Series
                 trial log; evaluate_trial fills in values for the following
-                variables: trialCorrect, trialType, responseType, and
-                trialFeedback
+                variables: trialCorrect, trial_type, response_type, and
+                trial_feedback
 
     """
 
@@ -383,131 +477,70 @@ def evaluate_trial(eval_data,feedback_dur,window,stimuli,log):
 
     # Define dynamic variables
     # -------------------------------------------------------------------------
-    # trialCorrect    = []
-    # trialLabel      = []
-    # trialFeedback   = []
-    #
-    # # Trial evaluation
-    # # =========================================================================
-    #
-    # ix = log.index.tolist()[0]
-    #
-    # # Match pattern, using stimulus and response data
-    # source = eval_data['eval_data'].fillna(float('inf'))
-    # patternDict= log[source.columns].fillna(float('inf')).to_dict()
-    # pattern = {key: [value[ix]] for key,value in patternDict.iteritems()}
-    # iRow = source.isin(pattern).all(1)
-    #
-    # if sum(iRow) == 0:
-    #
-    #     trialCorrect = False
-    #
-    #     # If no match, try to match using stimulus data only to determine trialType
-    #     sourceStim = eval_data['eval_data'][['s1Ix','s2Ix']].fillna(float('inf'))
-    #     patternDictStim = log[sourceStim.columns].fillna(float('inf')).to_dict()
-    #     patternStim = {key: [value[ix]] for key,value in patternDictStim.iteritems()}
-    #     iRow = sourceStim.isin(patternStim).all(1)
-    #
-    #     uniqueTrialTypes = eval_data['trialType'].loc[iRow].unique()
-    #     if len(uniqueTrialTypes) == 0:
-    #         trialType = 'NOC' # Not otherwise classified
-    #     elif len(uniqueTrialTypes) == 1:
-    #         trialType = uniqueTrialTypes.tolist()[0]
-    #     else:
-    #         trialType = "Non-unique: %s" % ', '.join(uniqueVals.tolist())
-    #
-    #     responseType = 'NOC' # Not otherwise classified
-    #     trialFeedback = 'incorrect'
-    #
-    # elif sum(iRow) == 1:
-    #
-    #     trialCorrect    = eval_data['correct'].loc[iRow].as_matrix().tolist()[0]
-    #     trialType       = eval_data['trialType'].loc[iRow].as_matrix().tolist()[0]
-    #     responseType    = eval_data['responseType'].loc[iRow].as_matrix().tolist()[0]
-    #     trialFeedback   = eval_data['feedback'].loc[iRow].as_matrix().tolist()[0]
-    #
-    # elif sum(iRow) > 1:
-    #
-    #     # Determine if there is one unique trialCorrect value among selected rows
-    #     uniqueTrialCorrect = eval_data['correct'].loc[iRow].unique()
-    #     if len(uniqueTrialCorrect) == 0:
-    #         trialCorrect = 'Unknown'
-    #     elif len(uniqueTrialCorrect) == 1:
-    #         trialCorrect = uniqueTrialCorrect.tolist()[0]
-    #     else:
-    #         trialCorrect = "Non-unique: %s" % ', '.join(uniqueTrialCorrect.tolist())
-    #
-    #     # Determine if there is one unique trialType among selected rows
-    #     uniqueTrialTypes = eval_data['trialType'].loc[iRow].unique()
-    #     if len(uniqueTrialTypes) == 0:
-    #         trialType = 'NOC' # Not otherwise classified
-    #     elif len(uniqueTrialTypes) == 1:
-    #         trialType = uniqueTrialTypes.tolist()[0]
-    #     else:
-    #         trialType = "Non-unique: %s" % ', '.join(uniqueTrialTypes.tolist())
-    #
-    #     # Determine if there is one unique response type among selected rows
-    #     uniqueResponseTypes = eval_data['responseType'].loc[iRow].unique()
-    #     if len(uniqueResponseTypes) == 0:
-    #         responseType = 'NOC' # Not otherwise classified
-    #     elif len(uniqueResponseTypes) == 1:
-    #         responseType = uniqueResponseTypes.tolist()[0]
-    #     else:
-    #         responseType = "Non-unique: %s" % ', '.join(uniqueResponseTypes.tolist())
-    #
-    #     # Determine if there is one unique trial feedback among selected rows
-    #     uniqueTrialFeedback = eval_data['feedback'].loc[iRow].unique()
-    #     if len(uniqueTrialFeedback) == 0:
-    #         trialFeedback = 'incorrect' # Not otherwise classified
-    #     elif len(uniqueTrialFeedback) == 1:
-    #         trialFeedback = uniqueTrialFeedback.tolist()[0]
-    #     else:
-    #         trialFeedback = 'incorrect'
-    #
-    #     print('Warning: combination of stimuli and response(s) matches multiple criteria.')
-    #     print('--------------------------------------------------------------')
-    #     print('Stimuli and response(s) on this trial:')
-    #     pprint(pattern)
-    #     print('trialCorrect: \t %s' % (trialCorrect))
-    #     print('trialType: \t %s' % (trialType))
-    #     print('responseType: \t %s' % (responseType))
-    #     print('trialFeedback: \t %s' % (trialFeedback))
-    #
-    # log['trialCorrect']     = trialCorrect
-    # log['trialType']        = trialType
-    # log['responseType']     = responseType
-    # log['trialFeedback']    = trialFeedback
+    trial_feedback = []
 
-    # SOA adjustments
+
+    trial_correct    = []
+    trial_feedback   = []
+
+    # Trial evaluation
     # =========================================================================
 
-    # newSoa = []
-    #
-    # if soa['type'] == 'staircase':
-    #
-    #     soaIx = []
-    #     soa = []
-    #
-    #
-    #     if trialLabel == 'correct':
-    #         newSoa = soa + soaStep
-    #     else:
-    #         newSoa = soa - soaStep
+    # Match pattern, using stimulus and response data
+    source = eval_data['eval_data'].fillna('NA')
+    pattern_dict= log[source.columns].fillna('NA').to_dict()
+    pattern = {key: [value] for key, value in pattern_dict.iteritems()}
+    i_row = source.isin(pattern).all(1)
+
+    if sum(i_row) == 0:
+        warnings.warn('No match between trial performance and trial '
+                      'evaluation criteria', UserWarning)
+        trial_correct = False
+        trial_feedback = ""
+
+    elif sum(i_row) == 1:
+
+        trial_correct = \
+            eval_data['correct'].get(eval_data['correct'][i_row].index[0])
+        trial_feedback = \
+            eval_data['feedback'].get(eval_data['feedback'][i_row].index[0])
+
+    log['trial_correct'] = trial_correct
+    log['trial_feedback'] = trial_feedback
+
+    # Staircase adjustments
+    # =========================================================================
 
     # Feedback
     # =========================================================================
 
-    # stimuli['feedback'][0].setText(trialFeedback)
-    # stimuli['feedback'][0].setAutoDraw(True)
-    # stimuli['iti'][0].setAutoDraw(True)
-    # window.flip()
-    # pp.core.wait(feedback_dur)
-    # stimuli['feedback'][0].setAutoDraw(False)
+    stimuli['feedback'][0].setText(trial_feedback)
+
+    if 'll' in log['choice']:
+        feedback_stim_to_display = \
+            ['feedback', 'll_rect', 'choice_instr', 'ss_opt', 'll_opt']
+    elif 'ss' in log['choice']:
+        feedback_stim_to_display = \
+            ['feedback', 'ss_rect', 'choice_instr', 'ss_opt', 'll_opt']
+    else:
+        feedback_stim_to_display = \
+            ['feedback', 'choice_instr', 'ss_opt', 'll_opt']
+
+    # Display feedback stimuli
+    for stim in feedback_stim_to_display :
+        stimuli[stim][0].setAutoDraw(True)
+    stimuli['iti'][0].setAutoDraw(False)
+    window.flip()
+    pp.core.wait(feedback_dur)
+    for stim in feedback_stim_to_display :
+        stimuli[stim][0].setAutoDraw(False)
+
+    # Intertrial interval stimulus
+    # =========================================================================
     stimuli['iti'][0].setAutoDraw(True)
     stimuli['iti'][0].setText('o')
     window.flip()
     stimuli['iti'][0].setAutoDraw(False)
-
 
     return log
 def init_config(runtime, mod_dir):
@@ -747,28 +780,26 @@ def init_config(runtime, mod_dir):
     ###########################################################################
     # TODO: Re-implement evaluation
 
-    # trial_eval_data = pd.read_csv(
-    #     config['evaluation']['trial']['eval_data_file'][rd_class],
-    #     error_bad_lines=False)
+    trial_eval_data = pd.read_csv(
+        config['evaluation']['trial']['eval_data_file'][rd_class],
+        error_bad_lines=False)
     # trial_eval_data = check_df_from_csv_file(trial_eval_data)
-    #
-    # trial_categories = trial_eval_data.fillna(value=np.nan)
-    #
-    # eval_columns = []
-    # for col in trial_eval_data.columns:
-    #     if not col.startswith('trial'):
-    #         eval_columns.append(col)
-    #
-    # config['evaluation']['trial']['eval_data'] = trial_eval_data[
-    #     eval_columns].copy()
-    # config['evaluation']['trial']['correct'] = trial_eval_data[
-    #     'trial_correct'].copy()
-    # config['evaluation']['trial']['trial_type'] = trial_eval_data[
-    #     'trial_type'].copy()
-    # config['evaluation']['trial']['response_type'] = trial_eval_data[
-    #     'trialresponse_type'].copy()
-    # config['evaluation']['trial']['feedback'] = trial_eval_data[
-    #     'trial_feedback'].copy()
+
+    trial_categories = trial_eval_data.fillna(value="")
+
+    eval_columns = [col for col in trial_eval_data.columns if col not in
+                  ['correct', 'feedback']]
+
+    config['evaluation']['trial']['eval_data'] = trial_eval_data[
+        eval_columns].copy()
+    config['evaluation']['trial']['trial_type'] = trial_eval_data[
+        'trial_type'].copy()
+    config['evaluation']['trial']['choice'] = trial_eval_data[
+        'choice'].copy()
+    config['evaluation']['trial']['correct'] = trial_eval_data[
+        'correct'].copy()
+    config['evaluation']['trial']['feedback'] = trial_eval_data[
+        'feedback'].copy()
 
     ###########################################################################
     # INSTRUCTION
@@ -1197,7 +1228,9 @@ def init_stimulus(window, stim_type):
     """
 
     stim_dict = {'textstim': pp.visual.TextStim(window),
-                 'imagestim': pp.visual.ImageStim(window)}
+                 'rect': pp.visual.Rect(window),
+                 'imagestim': pp.visual.ImageStim(window),
+                 }
 
     stim_object = stim_dict[stim_type.lower()]
 
@@ -1344,7 +1377,7 @@ def present_stimuli(window, stim_list, u, f_on_off, log):
     # Draw stimuli, flip screen
     for frame_ix in range(n_frame):
 
-        for stim_ix in range(n_stim - 1):
+        for stim_ix in range(n_stim):
 
             if u[stim_ix, frame_ix]:
                 stim_list[stim_ix].setAutoDraw(True)
@@ -1354,9 +1387,8 @@ def present_stimuli(window, stim_list, u, f_on_off, log):
         t_flip[frame_ix] = window.flip()
 
     # Hide all trial stimuli and present ITI stimulus
-    [stim_list[stim_ix].setAutoDraw(False) for stim_ix in range(n_stim - 1)]
-    stim_list[-1].setAutoDraw(True)
-    t_flip[-1] = window.flip()
+    [stim_list[stim_ix].setAutoDraw(False) for stim_ix in range(n_stim)]
+    t_flip.append(window.flip())
 
     # Timing
     trial_ons = t_flip[0]
@@ -1444,6 +1476,10 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
     stimuli = config['stimuli']
     ss_opt_pos = config['stim_config']['ss_opt']['pos']
     ll_opt_pos = config['stim_config']['ll_opt']['pos']
+    ss_rect_pos = config['stim_config']['ss_rect']['pos']
+    ll_rect_pos = config['stim_config']['ll_rect']['pos']
+
+
     trial_stats = config['statistics']['trial']
     ip_procedure = config['ip_procedure']
     trial_eval_data = config['evaluation']['trial']
@@ -1521,18 +1557,24 @@ def run_block(config,block_id,trial_list,block_log,trial_ons_next_block):
         # ---------------------------------------------------------------------
 
         # Get default positions of smaller-sooner and larger-later options
-        x_ss, y_ss = ss_opt_pos
-        x_ll, y_ll = ll_opt_pos
+        x_ss_opt, y_ss_opt = ss_opt_pos
+        x_ll_opt, y_ll_opt = ll_opt_pos
+        x_ss_rect, y_ss_rect = ss_rect_pos
+        x_ll_rect, y_ll_rect = ll_rect_pos
 
         # Randomly determine side, then update and log position
         if random.random() < 0.5:
-            stimuli['ss_opt'][0].pos = (x_ss, y_ss)
-            stimuli['ll_opt'][0].pos = (x_ll, y_ll)
+            stimuli['ss_opt'][0].pos = (x_ss_opt, y_ss_opt)
+            stimuli['ll_opt'][0].pos = (x_ll_opt, y_ll_opt)
+            stimuli['ss_rect'][0].pos = (x_ss_rect, y_ss_rect)
+            stimuli['ll_rect'][0].pos = (x_ll_rect, y_ll_rect)
             this_trial_log['ll_side'] = 'right'
         else:
             # Swap sides
-            stimuli['ss_opt'][0].pos = (x_ll, y_ll)
-            stimuli['ll_opt'][0].pos = (x_ss, y_ss)
+            stimuli['ss_opt'][0].pos = (x_ll_opt, y_ll_opt)
+            stimuli['ll_opt'][0].pos = (x_ss_opt, y_ss_opt)
+            stimuli['ss_rect'][0].pos = (x_ll_rect, y_ll_rect)
+            stimuli['ll_rect'][0].pos = (x_ss_rect, y_ss_rect)
             this_trial_log['ll_side'] = 'left'
 
         # </editor-fold desc="2.1.2. Set side of choice stimulus">
@@ -2018,18 +2060,18 @@ def run_ip_procedure(config):
 
             # Stimuli (stimuli) -----------------------------------------------
 
-            x_ss, y_ss = config['stimuli']['ss_opt'][0].pos
-            x_ll, y_ll = config['stimuli']['ll_opt'][0].pos
+            x_ss_opt, y_ss_opt = config['stimuli']['ss_opt'][0].pos
+            x_ll_opt, y_ll_opt = config['stimuli']['ll_opt'][0].pos
 
             # Randomly determine side of SS and LL option
             if random.random() < 0.5:
-                stimuli['ss_opt'][0].pos = (x_ss, y_ss)
-                stimuli['ll_opt'][0].pos = (x_ll, y_ll)
+                stimuli['ss_opt'][0].pos = (x_ss_opt, y_ss_opt)
+                stimuli['ll_opt'][0].pos = (x_ll_opt, y_ll_opt)
                 this_trial_log['ll_side'] = 'right'
             else:
                 # Swap sides
-                stimuli['ss_opt'][0].pos = (x_ll, y_ll)
-                stimuli['ll_opt'][0].pos = (x_ss, y_ss)
+                stimuli['ss_opt'][0].pos = (x_ll_opt, y_ll_opt)
+                stimuli['ll_opt'][0].pos = (x_ss_opt, y_ss_opt)
                 this_trial_log['ll_side'] = 'left'
 
 
@@ -2141,13 +2183,15 @@ def run_ip_procedure(config):
             ss_option.setPos(newPos=[-8, 0])
             ss_option.draw()
 
-            # SS option
+            # LL option
             ll_opt_str = '%.2f Euro /n in %d days' % (m_l, t_l)
             ll_option = init_stimulus(window, stim_type="TextStim")
             ll_option.setText(text=ll_opt_str)
             choice_instruction.setFont(font='Helvetica')
             ll_option.setPos(newPos=[8, 0])
             ll_option.draw()
+
+
 
             window.flip()
             pp.core.wait(0.5)
@@ -2559,11 +2603,11 @@ def run_trial(config,wait_for_trigger,trial_ons,hub,trial_log,trial_timing,windo
 
     # Evaluate trial
     # -------------------------------------------------------------------------
-    # trial_log = evaluate_trial(eval_data=trial_eval_data,
-    #                            feedback_dur=feedback_dur,
-    #                            window=window,
-    #                            stimuli=stimuli,
-    #                            log=trial_log)
+    trial_log = evaluate_trial(eval_data=trial_eval_data,
+                               feedback_dur=feedback_dur,
+                               window=window,
+                               stimuli=stimuli,
+                               log=trial_log)
     #
     # if __debug__:
     #     t_feedback_given = config['clock'].getTime()
@@ -2699,10 +2743,6 @@ def stim_to_frame_mat(config,trial,log):
                                              stim_list=stim_list,
                                              ons=ons,
                                              dur=dur)
-
-    # Append iti stimulus to stim_list
-    stimuli['iti'][0].setText('o')
-    stim_list.append(stimuli['iti'][0])
 
     dt = np.array([1./config['window']['frame_rate']])
     trial_dur = np.array(np.max(ons + dur))

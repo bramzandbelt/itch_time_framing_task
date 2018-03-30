@@ -648,27 +648,82 @@ stim_config:
     # below. Stimulus content is currently determined through a comma-separated
     # value (csv) file, see below.
     #
-#    feedback:
-#
-#        # type: string
-#        #
-#        # The PsychoPy stimulus class of the instruction stimulus. Currently,
-#        # only TextStim and ImageStim is supported.
-#        #
-#        type: TextStim
-#
-#        # name: identifier of the stimulus
-#        #
-#        # This key-value pair is not used by the code.
-#        #
-#        name: feedback
-#
-#        color: [255,255,0]
-#        opacity: 1
-#        font: Helvetica
-#        height: 1
-#        ori: 0
-#        pos: [0,0]
+
+    ss_rect:
+        # type: string
+        #
+        # The PsychoPy stimulus class of the instruction stimulus. Currently,
+        # only TextStim, Rect, and ImageStim is supported.
+        #
+        type: Rect
+        name: ss_rect
+
+        # content: list
+        #
+        # This list of strings contains the stimuli (if type equals TextStim)
+        # or filenames of the stimuli (if type equals ImageStim). The indices
+        # in the cueIx column of the trialList files correspond to the indices
+        # of the content list.
+        # N.B. Unicode characters can be used as TextStim stimuli, but they
+        # should be between double-quotes (e.g. ["\u2666","\u2665"]).
+        #
+        fill_color: [128, 128, 128]
+        line_color: [255, 255, 0]
+        line_width: 2
+        opacity: 1
+        width: 8
+        height: 4
+        ori: 0
+        pos: [-6,0]
+
+    ll_rect:
+        # type: string
+        #
+        # The PsychoPy stimulus class of the instruction stimulus. Currently,
+        # only TextStim, Rect, and ImageStim is supported.
+        #
+        type: Rect
+        name: ll_rect
+
+        # content: list
+        #
+        # This list of strings contains the stimuli (if type equals TextStim)
+        # or filenames of the stimuli (if type equals ImageStim). The indices
+        # in the cueIx column of the trialList files correspond to the indices
+        # of the content list.
+        # N.B. Unicode characters can be used as TextStim stimuli, but they
+        # should be between double-quotes (e.g. ["\u2666","\u2665"]).
+        #
+        fill_color: [128, 128, 128]
+        line_color: [255, 255, 0]
+        line_width: 2
+        opacity: 1
+        width: 8
+        height: 4
+        ori: 0
+        pos: [6,0]
+
+    feedback:
+
+        # type: string
+        #
+        # The PsychoPy stimulus class of the instruction stimulus. Currently,
+        # only TextStim and ImageStim is supported.
+        #
+        type: TextStim
+
+        # name: identifier of the stimulus
+        #
+        # This key-value pair is not used by the code.
+        #
+        name: feedback
+
+        color: [255,255,0]
+        opacity: 1
+        font: Helvetica
+        height: 1
+        ori: 0
+        pos: [0,2]
 
     # iti: dictionary
     #
@@ -863,7 +918,7 @@ statistics:
 evaluation:
     trial:
         eval_data_file:
-            Keyboard: data/3017031-05-Expt01/csvfiles/trialEvalData_Keyboard.csv
+            Keyboard: data/experiment/csvfiles/trial_eval_data_keyboard.csv
             Serial: data/3017031-05-Expt01/csvfiles/trialEvalData_Serial.csv
             fORP:
     block:
@@ -877,7 +932,7 @@ feedback:
         # duration: float
         #
         # Duration (in seconds) trial feedback is shown onscreen
-        duration: 0.5
+        duration: 2
         features:
             accuracy: False
             rt: False
