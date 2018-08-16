@@ -1898,16 +1898,16 @@ def make_stim_str(stim, framing, m_unit, m_s, m_l, t_unit, t_s, t_l):
         if framing in ['neutral', 'delay', 'date']:
             stim_str = '{:^70}'.format('Choose between:')
         elif framing in ['defer', 'speedup']:
-            fmt_str = "You are entitled to receive {0:s} {1:.2f}  in {2:d} {3:s}. Choose between:"
+            fmt_str = "You are scheduled to receive {0:s} {1:.2f}  in {2:d} {3:s}. Choose between:"
             if framing == 'defer':
                 # Defer framing example:
-                # "You are entitled to receive €21.76 today. Choose between:"
+                # "You are scheduled to receive €21.76 today. Choose between:"
                 stim_str = \
                     '{:^70}'.format(
                         fmt_str.format(m_unit, m_s, t_s, t_unit))
             elif framing == 'speedup':
                 # Speedup framing example:
-                # "You are entitled to receive €43.52 in 64 days. Choose between:"
+                # "You are scheduled to receive €43.52 in 64 days. Choose between:"
                 stim_str = \
                     '{:^70}'.format(
                         fmt_str.format(m_unit, m_l, t_l, t_unit))
