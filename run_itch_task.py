@@ -53,6 +53,14 @@ class ExperimentRuntime(ppiohub.ioHubExperimentRuntime):
 
         # 2. Run practice blocks
         # ---------------------------------------------------------------------
+
+        # stage_id = 'practice'
+        # practice_trial_list = itch.make_trial_list(config, stage_id=stage_id)
+        #
+        # itch.run_stage(config=config,
+        #                stage_id=stage_id,
+        #                trial_list=practice_trial_list)
+
         # if config['practice']['enable']:
         #
         #     p_trial_list = config['practice']['trial_list']
@@ -64,26 +72,25 @@ class ExperimentRuntime(ppiohub.ioHubExperimentRuntime):
 
         # 2. Run indifference point procedure
         # ---------------------------------------------------------------------
-        ipp_trial_list = itch.make_trial_list(config)
+        # stage_id = 'ip_procedure'
+        # ipp_trial_list = itch.make_trial_list(config, stage_id=stage_id)
+        #
+        # itch.run_stage(config=config,
+        #                stage_id=stage_id,
+        #                trial_list=ipp_trial_list)
+
+        # 3. Run experimental blocks
+        # ---------------------------------------------------------------------
+        stage_id = 'experiment'
+        expt_trial_list = itch.make_trial_list(config, stage_id=stage_id)
 
         itch.run_stage(config=config,
-                       stage_id='indifference_point_procedure',
-                       trial_list=ipp_trial_list)
+                       stage_id='experiment',
+                       trial_list=expt_trial_list)
 
-        # 5. Run experimental blocks
+        # 4.Terminate experiment
         # ---------------------------------------------------------------------
-        if config['experiment']['enable']:
-
-            e_trial_list = config['experiment']['trial_list']
-            e_trial_list = e_trial_list[e_trial_list.session_ix == session_ix]
-
-            itch.run_stage(config = config,
-                           stage_id = 'experiment',
-                           trial_list = e_trial_list)
-
-        # 6.Terminate experiment
-        # ---------------------------------------------------------------------
-        itch.present_instruction(config, 'end')
+        # itch.present_instruction(config, 'end')
         pp.core.quit()
 
 ####### Main Script Launching Code Below #######
