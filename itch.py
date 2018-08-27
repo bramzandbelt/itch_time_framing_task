@@ -1911,10 +1911,6 @@ def make_stim_str(stim, framing, m_unit, m_s, m_l, t_unit, t_s, t_l):
         'framing should be of type srr or unicode'
     assert any([isinstance(m_unit, str), isinstance(m_unit, unicode)]), \
         'm_unit should be of type srr or unicode'
-    assert any([isinstance(m_s, float), isinstance(m_s, int)]), \
-        'm_s should be of type float or int'
-    assert any([isinstance(m_l, float), isinstance(m_l, int)]), \
-        'm_l should be of type float or int'
     assert any([isinstance(t_unit, str), isinstance(t_unit, unicode)]), \
         't_unit should be of type srr or unicode'
     assert any([isinstance(t_s, float), isinstance(t_s, int)]), \
