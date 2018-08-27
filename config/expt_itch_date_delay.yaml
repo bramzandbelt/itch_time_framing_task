@@ -34,7 +34,7 @@ ethics_protocol_id: 'NL45659.091.14 v3.0'
 #
 #   Consider here referring to version A and B (randomization)
 #
-version: 'A'
+version: 'date_delay'
 
 # description: string
 #
@@ -144,6 +144,7 @@ session_defaults:
         practice: True
         ip_procedure: True
         experiment: True
+        instruction: True
 
 # display_session_dialog: boolean
 #
@@ -416,6 +417,50 @@ instruction:
     # presented when the subject does not meet task performance requirements
     # (see below) and a block has to be repeated.
     #
+    break:
+
+        # type: string
+        #
+        # The PsychoPy stimulus class of the instruction stimulus. Currently,
+        # only ImageStim is supported.
+        #
+        type: ImageStim
+
+        # name: identifier of the set of instructions
+        #
+        # Currently, this key-value pair is not used by the code.
+        #
+        name: breakInstruction
+
+        # content: list
+        #
+        # This list specifies the instruction stimuli files and the order in
+        # which they are shown. The response keys are used to move from one
+        # stimulus to the next.
+        #
+        content:
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.020.jpeg
+
+        # ori: int
+        #
+        # The orientation of the stimulus (in degrees).
+        #
+        ori: 0
+
+        # pos: int
+        #
+        # The position of the center of the stimulus in the stimulus. The value
+        # should be an x,y-pair.
+        #
+        pos: [0,0]
+
+    # blockrepeat: dictionary
+    #
+    # This dictionary contains information about the instruction stimuli to be
+    # presented when the subject does not meet task performance requirements
+    # (see below) and a block has to be repeated.
+    #
+
     block_repeat:
 
         # type: string
@@ -482,7 +527,7 @@ instruction:
         # to the next.
         #
         content:
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.018.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.019.jpeg
 
         # ori: int
         #
@@ -539,10 +584,6 @@ stim_config:
         # This list of strings contains the stimuli (if type equals TextStim)
         # or filenames of the stimuli (if type equals ImageStim).
         #
-        # TODO: Adjust this sentence:
-        # The indices in the cueIx column of the trialList files correspond to the indices
-        # of the content list.
-        #
         # N.B. Unicode characters can be used as TextStim stimuli, but they
         # should be between double-quotes (e.g. ["\u2666","\u2665"]).
         #
@@ -590,7 +631,7 @@ stim_config:
         opacity: 1
         height: 1
         ori: 0
-        pos: [-6,0]
+        pos: [-8,0]
 
     # ll: dictionary
     #
@@ -622,7 +663,7 @@ stim_config:
         font: Helvetica
         height: 1
         ori: 0
-        pos: [6,0]
+        pos: [8,0]
 
     # feedback: dictionary
     #
@@ -654,10 +695,10 @@ stim_config:
         line_color: [255, 255, 0]
         line_width: 2
         opacity: 1
-        width: 8
+        width: 12
         height: 4
         ori: 0
-        pos: [-6,0]
+        pos: [-8,0]
 
     ll_rect:
         # type: string
@@ -681,10 +722,10 @@ stim_config:
         line_color: [255, 255, 0]
         line_width: 2
         opacity: 1
-        width: 8
+        width: 12
         height: 4
         ori: 0
-        pos: [6,0]
+        pos: [8,0]
 
     feedback:
 
@@ -768,7 +809,7 @@ responses:
     #
 
     response_keys_per_class:
-        Keyboard: [f, h]
+        Keyboard: [f, h, return]
         Serial:   [f,b]
         fORP:     [f,b]
     # abort_keys: list
@@ -780,7 +821,7 @@ responses:
     # trigger_keys: list
     #
     # They keys with which the experiment can started.
-    trigger_keys: [return]
+    trigger_keys: [s]
 
     # toggle_keys
     #
@@ -816,8 +857,7 @@ practice:
     #
     # Path to the .csv-file containing the trial list for the practice blocks
     # Monetary amount of SS option
-#    m_s: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    m_s: [5, 30, 45, 50]
+    m_s: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
     # Monetary amount of LL option
     m_l: 50
     # Money units
@@ -829,22 +869,18 @@ practice:
     # Temporal delay units
     t_unit: "days"
     # Interval between instruction stimulus and SS & LL option stimuli, in seconds
-    isi_dur: 0 # 0.5
+    isi_dur: 0
     # Minimum response time, in seconds
     min_rt: 1.5
     # Maximum response time, in seconds
-    max_rt: 30
+    max_rt: 1000
     # If False: trial duration is fixed isi_dur + max_rt + min_feedback_dur
     # (see below) + iti_dur;
     # If True: trials are self-paced (but RT has to be greater than min_rt);
     self_paced: True
     # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
     # times)
-    iti_dur: 0
-
-    trial_list_file: data/experiment/csvfiles/trial_list_practice.csv
-    randomize_blocks: False
-    randomize_trials: False
+    iti_dur: 0.2
 
 ###############################################################################
 # INDIFFERENCE POINT PROCEDURE
@@ -862,7 +898,7 @@ ip_procedure:
     # Temporal delay to SS option
     t_s: 0
     # Temporal delay to LL option
-    t_l: [2, 16, 128] # [2, 4, 8, 16, 32, 64, 128]
+    t_l: [2, 4, 8, 16, 32, 64, 128]
     # Temporal delay units
     t_unit: "days"
     # Number of staircase trials
@@ -874,19 +910,18 @@ ip_procedure:
     # Number instruction manipulation check trials (per delay)
     n_instr_manip_check_trial: 0
     # Interval between instruction stimulus and SS & LL option stimuli, in seconds
-    isi_dur: 0 # 0.5
+    isi_dur: 0
     # Minimum response time, in seconds
     min_rt: 1.5
     # Maximum response time, in seconds
-    max_rt: 30
+    max_rt: 1000
     # If False: trial duration is fixed isi_dur + max_rt + min_feedback_dur
     # (see below) + iti_dur;
     # If True: trials are self-paced (but RT has to be greater than min_rt);
     self_paced: True
     # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
     # times)
-    iti_dur: 0 # 1
-    time_frames: ['neutral']
+    iti_dur: 0.2 # 1
     step_size: 0.17
 
 ###############################################################################
@@ -894,39 +929,28 @@ ip_procedure:
 ###############################################################################
 
 experiment:
-    # trial_list_file
-    #
-    # Path to the .csv-file containing the trial list for the experimental
-    # blocks
-    trial_list_file: data/experiment/csvfiles/trial_list_experiment.csv
-    randomize_blocks: False
-    randomize_trials: False
-
     # Number of catch trials (per framing block) on which people should
     # choose SS
     n_catch_trial_ss: 4
     # Number of catch trials (per framing block) on which people should choose LL
-    n_catch_trial_ll: 4
+    n_catch_trial_ll: 3
     # Number instruction manipulation check trials (per framing block)
-    n_instr_manip_check_trial: 10
+    n_instr_manip_check_trial: 0
     # Interval between instruction stimulus and SS & LL option stimuli, in seconds
-    isi_dur: 0 # 0.5
+    isi_dur: 0
     # Minimum response time, in seconds
     min_rt: 1.5
     # Maximum response time, in seconds
-    max_rt: 40
+    max_rt: 12
     # If False: trial duration is fixed isi_dur + max_rt + min_feedback_dur
     # (see below) + iti_dur;
     # If True: trials are self-paced (but RT has to be greater than min_rt);
     self_paced: True
     # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
     # times)
-    iti_dur: 0 # 1
-#    time_frames: ['date', 'delay']
-    n_reps: 2
-    time_frames: ['neutral', 'defer', 'speedup']
-
-
+    iti_dur: 0.2
+    time_frames: ['date', 'delay']
+    n_reps: 4
 
 ###############################################################################
 # STATISTICS
@@ -967,8 +991,6 @@ evaluation:
         eval_data_file:
             Keyboard: data/experiment/csvfiles/trial_eval_data_keyboard.csv
             Serial: data/3017031-05-Expt01/csvfiles/trialEvalData_Serial.csv
-            fORP:
-        rt_bounds: [1.5, 5]
     block:
 
 ###############################################################################
@@ -981,12 +1003,6 @@ feedback:
         #
         # Minimum duration trial feedback is shown onscreen, in seconds
         min_duration: 1
-        features:
-            accuracy: False
-            rt: False
-            rt_diff: False
-            n_trial_completed: False
-            n_trial_left: False
     block:
         #
         #
@@ -1000,36 +1016,35 @@ feedback:
             catch_ss_accuracy:
                 enable: True
                 criterion: [75,100]
-                feedbackPos: 'You paid attention to the options. Keep it up!'
-                feedbackNeg: 'Remember to read each scenario carefully!'
+                feedbackPos: 'Well done!'
+                feedbackNeg: 'Remember to consider both options carefully'
             catch_ll_accuracy:
                 enable: True
                 criterion: [75,100]
-                feedbackPos: 'You paid attention to the options. Keep it up!'
-                feedbackNeg: 'Remember to read each scenario carefully!'
+                feedbackPos: 'Well done!'
+                feedbackNeg: 'Remember to consider both options carefully'
             check_instr_accuracy:
                 enable: True
                 criterion: [75,100]
-                feedbackPos: 'You paid attention to the instructions. Keep
-                it up!'
-                feedbackNeg: 'Remember to read each scenario carefully!'
-            monotonic_decrease_ip:
+                feedbackPos: 'Well done!'
+                feedbackNeg: "Remember to read each scenario's instruction"
+            monotonicity:
                 enable: True
                 criterion: 20 # IPs cannot greater than the previous by this
                                # fraction of the LL amount - Johnson &
                                # Bickel (2008) proposed a value of 0.2
-                feedbackPos: 'Your performance meets preset requirements'
-                feedbackNeg: 'Your performance does not meet preset
-                requirements'
-            no_discounting:
+                feedbackPos: 'Well done!'
+                feedbackNeg: "Remember to pay attention to each option's
+                delay"
+            discounting:
                 enable: True
                 criterion: [0, 90] # The IP for the longest delay should be
                                # in between these percentages of the LL amount
                                # Johnson & Bickel (2008) proposed a value of
                                # [0 90]
                 feedbackPos: 'Your performance meets preset requirements'
-                feedbackNeg: 'Your performance does not meet preset
-                requirements'
+                feedbackNeg: "Remember to pay attention to each option's
+                delay"
 
 
 
@@ -1054,11 +1069,11 @@ feedback:
 # Maximum number of times a block is repeated before the experiment terminates. This only has effect if forceRepeat is set to True.
 performance_requirements:
     practice:
-        force_repeat: True
-        max_n_iter: 2
+        force_repeat: False
+        max_n_iter: None
     ip_procedure:
         force_repeat: True
-        max_n_iter: 2
+        max_n_iter: 3
     experiment:
         force_repeat: False
         max_n_iter: None
