@@ -1485,19 +1485,6 @@ def init_config(runtime, mod_dir):
                        'block_repeat', 'experiment', 'break', 'end']
          if config['instruction'][instr_type]['content'] is not None}
 
-
-    instr_list_p = pd.read_csv(
-        config['instruction']['practice']['instruction_list_file'],
-        error_bad_lines=False)
-    instr_list_p = check_df_from_csv_file(df=instr_list_p)
-    config['instruction']['practice']['list'] = instr_list_p
-
-    instr_list_e = pd.read_csv(
-        config['instruction']['experiment']['instruction_list_file'],
-        error_bad_lines=False)
-    instr_list_e = check_df_from_csv_file(df=instr_list_e)
-    config['instruction']['experiment']['list'] = instr_list_e
-
     ###########################################################################
     # PRACTICE
     ###########################################################################
@@ -2391,18 +2378,7 @@ def present_instruction(config, block_type, *args):
 
     stim_ix = 0
 
-    # Determine which instruction screens to show, depending on the
-    # experiment phase
-    # if block_type == 'practice' or block_type == 'experiment':
-    #     session_ix = config['session']['session_ix']
-    #     instruction_list = config['instruction'][block_type]['list']
-    #
-    #     pattern = {'session_ix': [session_ix],
-    #                'block_ix': [block_ix]}
-    #     ix = instruction_list.index.tolist()
-    #     i_row = instruction_list[pattern.keys()].isin(pattern).all(1)
-    #     stim_list = instruction_list.loc[i_row, 'instruction_ix'].astype(
-    #         int).tolist()
+
     if block_type == 'block_repeat':
         stim_list = [instruction_stim_ix]
     elif block_type == 'start' or \
