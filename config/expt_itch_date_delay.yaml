@@ -275,14 +275,6 @@ instruction:
     #
     practice:
 
-        # instruction_list_file: string
-        #
-        # Path to the comma separated value (csv) file containing the mapping
-        # between the index of the session, block, and instruction stimuli to
-        # be shown (see README file).
-        #
-        instruction_list_file: data/csv_files/instruction_list_practice.csv
-
         # type: string
         #
         # The PsychoPy stimulus class of the instruction stimulus. Currently,
@@ -326,7 +318,6 @@ instruction:
     #
 
     ip_procedure:
-        instruction_list_file: data/csv_files/instruction_list_ip_procedure.csv
 
         # type: string
         #
@@ -366,7 +357,6 @@ instruction:
         pos: [0,0]
 
     experiment:
-        instruction_list_file: data/csv_files/instruction_list_experiment.csv
 
         # type: string
         #
