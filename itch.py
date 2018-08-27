@@ -602,6 +602,7 @@ def evaluate_block(config,df,block_id,block_log):
         tt = {'catch_ss_accuracy': 'catch_ss',
               'catch_ll_accuracy': 'catch_ll',
               'check_instr_accuracy': 'check_instr',
+              'too_fast_responses': 'standard',
               'monotonicity': 'standard',
               'discounting': 'standard'
               }[stat_type]
@@ -616,6 +617,8 @@ def evaluate_block(config,df,block_id,block_log):
                 sort_values(by=['trial_ix', 't_l']). \
                 groupby(by='t_l')['m_s']. \
                 agg('last')
+        elif stat_type == 'too_fast_responses':
+            data = df.too_fast[df.trial_type == tt].value_counts()
         else:
             data = None
 
@@ -644,12 +647,12 @@ def evaluate_block(config,df,block_id,block_log):
 
         # Assertions
         known_stat_types = ['catch_ss_accuracy', 'catch_ll_accuracy',
-                            'check_instr_accuracy', 'monotonicity',
-                            'discounting']
+                            'check_instr_accuracy', 'too_fast_responses',
+                            'monotonicity', 'discounting']
         assert stat_type in known_stat_types, 'unknown stat_type %s' % \
                                               stat_type
 
-        if stat_type.endswith('accuracy'):
+        if stat_type.endswith('accuracy') or stat_type == 'too_fast_responses':
 
             if True in data.index:
                 n_true = data[True].astype(float)
@@ -744,12 +747,13 @@ def evaluate_block(config,df,block_id,block_log):
         str_stat_col = {'catch_ss_accuracy': 'catch_ss_accuracy',
                       'catch_ll_accuracy': 'catch_ll_accuracy',
                       'check_instr_accuracy': 'check_instr_accuracy',
+                      'too_fast_responses': 'too_fast_responses',
                       'monotonicity': 'monotonicity',
                       'discounting': 'discounting'
                       }
         str_crit_col = {'catch_ss_accuracy': 'catch_ss_accuracy_crit_met',
                       'catch_ll_accuracy': 'catch_ll_accuracy_crit_met',
-                      'check_instr_accuracy': 'check_instr_accuracy_crit_met',
+                      'too_fast_responses': 'too_fast_responses_crit_met',
                       'monotonicity': 'monotonicity_crit_met',
                       'discounting': 'discounting_crit_met'
                       }
@@ -819,22 +823,33 @@ def evaluate_block(config,df,block_id,block_log):
         perform_text = get_empty_text_stim(win)
         feedback_text = get_empty_text_stim(win)
 
-        pos_feedback_color = (255, 255, 255)
-        neg_feedback_color = (255, 0, 0)
+        pos_feedback_color = (0, 191, 0)
+        neg_feedback_color = (255, 128, 0)
 
         # Stimulus
         # -----------------------------------------------------------------
-        stim_name_text.setText(stat_type)
+        stim_str = {'catch_ss_accuracy': "accuracy on catch scenarios with a €0.00 option",
+                    'catch_ll_accuracy': 'accuracy on catch scenarios with equal amount options',
+                    'check_instr_accuracy': 'accuracy on catch scenarios requiring return key press',
+                    'too_fast_responses': 'proportion of fast responses',
+                    'monotonicity': 'max. difference between indifference '
+                                    'points (%)',
+                    'discounting': 'degree of discounting at longest delay'
+                    }
+
+
+        stim_name_text.setText(stim_str[stat_type])
         feedback_stim['stim'].append(stim_name_text)
 
         # Performance
         # -----------------------------------------------------------------
 
-        stat_str = {'catch_ss_accuracy': 'accuracy:  %0.f%% correct',
-                    'catch_ll_accuracy': 'accuracy:  %0.f%% correct',
-                    'check_instr_accuracy': 'accuracy:  %0.f%% correct',
-                    'monotonicity': 'min. difference: %0.f%%',
-                    'discounting': 'discounting at longest delay: %0.f%%'
+        stat_str = {'catch_ss_accuracy': '%0.f%%',
+                    'catch_ll_accuracy': '%0.f%%',
+                    'check_instr_accuracy': '%0.f%%',
+                    'too_fast_responses': '%0.f%%',
+                    'monotonicity': '%0.f%%',
+                    'discounting': '%0.f%%'
                     }
 
         if stat_type == 'monotonicity':
@@ -891,6 +906,7 @@ def evaluate_block(config,df,block_id,block_log):
     trial_type_exist = {'catch_ss_accuracy': any(tt == 'catch_ss'),
                         'catch_ll_accuracy': any(tt == 'catch_ll'),
                         'check_instr_accuracy': any(tt == 'check_instr'),
+                        'too_fast_responses': any(tt == 'standard'),
                         'monotonicity': any(tt == 'standard'),
                         'discounting': any(tt == 'standard')
                         }
@@ -899,6 +915,7 @@ def evaluate_block(config,df,block_id,block_log):
     stimulus = {'catch_ss_accuracy': 'catch_ss',
                 'catch_ll_accuracy': 'catch_ll',
                 'check_instr_accuracy': 'check_instr',
+                'too_fast_responses': 'too_fast_responses',
                 'monotonicity': 'ip_decrease',
                 'discounting': 'discounting'}
 
@@ -981,7 +998,7 @@ def evaluate_block(config,df,block_id,block_log):
     for i_stim in range(n_lines):
         # Set position of the stimulus
         y_pos = (float(n_lines) - 1) / 2 - i_stim
-        x_pos = -12
+        x_pos = -22.5
 
         block_feedback_stim['stim'][i_stim].setPos((x_pos, y_pos))
         block_feedback_stim['stim'][i_stim].setHeight(0.75)
@@ -989,7 +1006,7 @@ def evaluate_block(config,df,block_id,block_log):
         block_feedback_stim['stim'][i_stim].setAutoDraw(True)
 
         # Set position of performance stimulus
-        x_pos = -5
+        x_pos = -2.5
         block_feedback_stim['performance'][i_stim].setPos((x_pos, y_pos))
         block_feedback_stim['performance'][i_stim].setHeight(0.75)
         block_feedback_stim['performance'][i_stim].alignHoriz = 'left'
@@ -1158,7 +1175,7 @@ def get_empty_text_stim(window):
     italic      = False,
     alignHoriz  = 'center',
     alignVert   = 'center',
-    wrapWidth   = None,
+    wrapWidth   = 1000,
     autoLog     = None
 
 
@@ -1184,7 +1201,7 @@ def get_empty_text_stim(window):
                                    italic=False,
                                    alignHoriz='center',
                                    alignVert='center',
-                                   wrapWidth=None,
+                                   wrapWidth=1000,
                                    autoLog=None)
 
     text_stim.setSize(2,units='deg')
@@ -1823,6 +1840,15 @@ def init_log(config):
         else:
             monotonicity_cols = []
 
+        # Fast responses
+        # =====================================================================
+        if config['feedback']['block']['features']['too_fast_responses'][
+            'enable']:
+            too_fast_responses_cols = ['too_fast_responses',
+                                       'too_fast_responses_crit_met']
+        else:
+            too_fast_responses_cols = []
+
         # Indifference points decreasing sufficiently
         # =====================================================================
         if config['feedback']['block']['features']['discounting'][
@@ -1839,6 +1865,7 @@ def init_log(config):
         columns += catch_ss_accuracy_cols
         columns += catch_ll_accuracy_cols
         columns += check_instr_accuracy_cols
+        columns += too_fast_responses_cols
         columns += monotonicity_cols
         columns += discounting_cols
 
@@ -2869,22 +2896,21 @@ def run_stage(config, stage_id, trial_list):
             if (stage_id == 'experiment') & (block_ix < block_ixs[-1]):
                 present_instruction(config, 'break', block_ix)
 
-
-            # TODO: implement force_repeat procedure
             if force_repeat:
                 if not all_crit_met:
                     if iter_ix == (max_n_iter - 1):
-                        # TODO: implement instructions
-                        # present_instruction(config, 'block_repeat', 1)
-                        # present_instruction(config, 'end')
-                        pp.core.wait(5)
+                        present_instruction(config, 'block_repeat', 1)
+                        pp.core.wait(15)
                         pp.core.quit()
                     else:
                         iter_ix = iter_ix + 1
 
                         # Warn subject that block will be repeated
-                        # TODO: implement instructions
-                        # present_instruction(config, 'block_repeat', 0)
+                        present_instruction(config, 'block_repeat', 0)
+
+                        if config['instruction']['enable']:
+                            # Present instruction
+                            present_instruction(config, stage_id, 0)
 
             else:
                 break

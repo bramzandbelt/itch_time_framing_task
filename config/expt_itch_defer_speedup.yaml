@@ -349,7 +349,8 @@ instruction:
         #
         content:
         - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.008.jpeg
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.009.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.010.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.012.jpeg
 
         # ori: int
         #
@@ -387,11 +388,11 @@ instruction:
         # stimulus to the next.
         #
         content:
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.011.jpeg
         - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.014.jpeg
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.015.jpeg
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.016.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.017.jpeg
         - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.018.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.019.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.021.jpeg
 
         # ori: int
         #
@@ -435,7 +436,7 @@ instruction:
         # stimulus to the next.
         #
         content:
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.020.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.024.jpeg
 
         # ori: int
         #
@@ -481,8 +482,8 @@ instruction:
         #   subject that the experiment will be terminated because performance
         #   fails criteria.
         content:
-            - data/3017031-05-Expt01/instructions/instruction_give_it_another_try.jpeg
-            - data/3017031-05-Expt01/instructions/instruction_terminate_experiment.jpeg
+            - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.022.jpeg
+            - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.023.jpeg
 
         # ori: int
         #
@@ -523,7 +524,7 @@ instruction:
         # to the next.
         #
         content:
-        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.019.jpeg
+        - instruction_screens/instruction_screens_intertemporal_choice_task/instruction_screens_intertemporal_choice_task.025.jpeg
 
         # ori: int
         #
@@ -1017,37 +1018,38 @@ feedback:
             catch_ss_accuracy:
                 enable: True
                 criterion: [75,100]
-                feedbackPos: 'You paid attention to the options. Keep it up!'
-                feedbackNeg: 'Remember to read each scenario carefully!'
+                feedbackPos: 'Criterion met: Well done!'
+                feedbackNeg: 'Remember: consider both options carefully'
             catch_ll_accuracy:
                 enable: True
                 criterion: [75,100]
-                feedbackPos: 'You paid attention to the options. Keep it up!'
-                feedbackNeg: 'Remember to read each scenario carefully!'
+                feedbackPos: 'Criterion met: Well done!'
+                feedbackNeg: 'Remember: consider both options carefully'
             check_instr_accuracy:
                 enable: True
                 criterion: [75,100]
-                feedbackPos: 'You paid attention to the instructions. Keep
-                it up!'
-                feedbackNeg: 'Remember to read each scenario carefully!'
+                feedbackPos: 'Criterion met: Well done!'
+                feedbackNeg: "Remember: read each scenario's instruction"
+            too_fast_responses:
+                enable: True
+                criterion: [0, 25]
+                feedbackPos: 'Criterion met: Well done!'
+                feedbackNeg: "Remember: read each scenario carefully"
             monotonicity:
                 enable: True
                 criterion: 20 # IPs cannot greater than the previous by this
                                # fraction of the LL amount - Johnson &
                                # Bickel (2008) proposed a value of 0.2
-                feedbackPos: 'Your performance meets preset requirements'
-                feedbackNeg: 'Your performance does not meet preset
-                requirements'
+                feedbackPos: 'Criterion met: Well done!'
+                feedbackNeg: "Remember: pay attention to each option's delay"
             discounting:
                 enable: True
                 criterion: [0, 90] # The IP for the longest delay should be
                                # in between these percentages of the LL amount
                                # Johnson & Bickel (2008) proposed a value of
                                # [0 90]
-                feedbackPos: 'Your performance meets preset requirements'
-                feedbackNeg: 'Your performance does not meet preset
-                requirements'
-
+                feedbackPos: 'Criterion met: Well done!'
+                feedbackNeg: "Remember: pay attention to each option's delay"
 
 
 
