@@ -614,7 +614,7 @@ def evaluate_block(config,df,block_id,block_log):
             # Indifference points
             data = \
                 df.loc[df.trial_type == tt, ['trial_ix','t_l', 'm_s']]. \
-                sort_values(by=['trial_ix', 't_l']). \
+                sort(columns=['trial_ix', 't_l']). \
                 groupby(by='t_l')['m_s']. \
                 agg('last')
         elif stat_type == 'too_fast_responses':
@@ -2301,7 +2301,7 @@ def make_trial_list(config, stage_id):
     if stage_id in ['practice', 'ip_procedure']:
         trial_list = \
             trial_list. \
-                sort_values(by=['t_l'], axis='index'). \
+                sort(columns=['t_l'], axis='index'). \
                 reset_index(drop=True)
     elif stage_id == 'experiment':
         # Randomize all trials, then sort by block index. This ensure that
@@ -2309,7 +2309,7 @@ def make_trial_list(config, stage_id):
         trial_list = \
             trial_list. \
                 sample(frac=1). \
-                sort_values(by=['block_ix'], axis='index'). \
+                sort(columns=['block_ix'], axis='index'). \
                 reset_index(drop=True)
 
     # Fill in trial_ix
