@@ -51,46 +51,66 @@ class ExperimentRuntime(ppiohub.ioHubExperimentRuntime):
         config  = itch.init_config(self,mod_dir)
         session_ix = config['session']['session_ix']
 
+        if config['instruction']['enable']:
+            # Present general instruction
+            itch.present_instruction(config, 'start')
+
         # 2. Run practice blocks
         # ---------------------------------------------------------------------
 
-        # stage_id = 'practice'
-        # practice_trial_list = itch.make_trial_list(config, stage_id=stage_id)
-        #
-        # itch.run_stage(config=config,
-        #                stage_id=stage_id,
-        #                trial_list=practice_trial_list)
+        stage_id = 'practice'
 
-        # if config['practice']['enable']:
-        #
-        #     p_trial_list = config['practice']['trial_list']
-        #     p_trial_list = p_trial_list[p_trial_list.session_ix == session_ix]
-        #
-        #     itch.run_stage(config = config,
-        #               stage_id = 'practice',
-        #               trial_list = p_trial_list)
+        if config[stage_id]['enable']:
+
+            trial_list = itch.make_trial_list(config, stage_id=stage_id)
+
+            if config['instruction']['enable']:
+                # Present practice instruction
+                itch.present_instruction(config, stage_id, 0)
+
+            itch.run_stage(config=config,
+                           stage_id=stage_id,
+                           trial_list=trial_list)
+        else:
+            pass
 
         # 2. Run indifference point procedure
         # ---------------------------------------------------------------------
-        # stage_id = 'ip_procedure'
-        # ipp_trial_list = itch.make_trial_list(config, stage_id=stage_id)
-        #
-        # itch.run_stage(config=config,
-        #                stage_id=stage_id,
-        #                trial_list=ipp_trial_list)
+        stage_id = 'ip_procedure'
+
+        if config[stage_id]['enable']:
+            trial_list = itch.make_trial_list(config, stage_id=stage_id)
+
+            if config['instruction']['enable']:
+                # Present indifference point procedure instruction
+                itch.present_instruction(config, stage_id, 0)
+
+            itch.run_stage(config=config,
+                           stage_id=stage_id,
+                           trial_list=trial_list)
+        else:
+            pass
 
         # 3. Run experimental blocks
         # ---------------------------------------------------------------------
         stage_id = 'experiment'
-        expt_trial_list = itch.make_trial_list(config, stage_id=stage_id)
 
-        itch.run_stage(config=config,
-                       stage_id='experiment',
-                       trial_list=expt_trial_list)
+        if config[stage_id]['enable']:
+            trial_list = itch.make_trial_list(config, stage_id=stage_id)
+
+            if config['instruction']['enable']:
+                # Present experiment instruction
+                itch.present_instruction(config, stage_id, 0)
+
+            itch.run_stage(config=config,
+                           stage_id=stage_id,
+                           trial_list=trial_list)
+        else:
+            pass
 
         # 4.Terminate experiment
         # ---------------------------------------------------------------------
-        # itch.present_instruction(config, 'end')
+        itch.present_instruction(config, 'end')
         pp.core.quit()
 
 ####### Main Script Launching Code Below #######
@@ -122,39 +142,39 @@ if __name__ == "__main__":
                                        'Serial',
                                        'fORP']}
 
-        # dlg_info = dict(info)
-        # info_dlg = ppgui.DlgFromDict(dictionary = dlg_info,
-        #                               title = 'Select response device')
-        # if not info_dlg.OK:
-        #     return -1
-        #
-        # while dlg_info.values()[0] == u'Select' and info_dlg.OK:
-        #         dlg_info = dict(info)
-        #         info_dlg = ppgui.DlgFromDict(dictionary=dlg_info,
-        #                                       title='SELECT Response device to continue...')
-        #
-        # if not info_dlg.OK:
-        #     return -1
+        dlg_info = dict(info)
+        info_dlg = ppgui.DlgFromDict(dictionary = dlg_info,
+                                      title = 'Select response device')
+        if not info_dlg.OK:
+            return -1
+
+        while dlg_info.values()[0] == u'Select' and info_dlg.OK:
+                dlg_info = dict(info)
+                info_dlg = ppgui.DlgFromDict(dictionary=dlg_info,
+                                              title='SELECT Response device to continue...')
+
+        if not info_dlg.OK:
+            return -1
 
         # Determine which iohub base configuration file to use
         # ---------------------------------------------------------------------
-        # os.chdir(config_dir)
-        # iohub_base_files = ['Select']
-        # iohub_base_files.extend(glob.glob('./iohub_base*.yaml'))
-        # os.chdir(mod_dir)
-        #
-        # iohub_base_config_info = {'IOHub base config file = ': iohub_base_files}
-        # iohub_base_config_info = dict(iohub_base_config_info)
-        #
-        # iohub_base_config_dlg = ppgui.DlgFromDict(dictionary = iohub_base_config_info,
-        #                                            title = 'Select IOHub base config file')
-        # if not iohub_base_config_dlg.OK:
-        #     return -1
-        #
-        # while iohub_base_config_info.values()[0] == u'Select' and iohub_base_config_dlg.OK:
-        #     iohub_base_config_info = dict(iohub_base_config_info)
-        #     iohub_base_config_dlg = ppgui.DlgFromDict(dictionary = iohub_base_config_info,
-        #                                                title = 'SELECT IOHub base config file to continue...')
+        os.chdir(config_dir)
+        iohub_base_files = ['Select']
+        iohub_base_files.extend(glob.glob('./iohub_base*.yaml'))
+        os.chdir(mod_dir)
+
+        iohub_base_config_info = {'IOHub base config file = ': iohub_base_files}
+        iohub_base_config_info = dict(iohub_base_config_info)
+
+        iohub_base_config_dlg = ppgui.DlgFromDict(dictionary = iohub_base_config_info,
+                                                   title = 'Select IOHub base config file')
+        if not iohub_base_config_dlg.OK:
+            return -1
+
+        while iohub_base_config_info.values()[0] == u'Select' and iohub_base_config_dlg.OK:
+            iohub_base_config_info = dict(iohub_base_config_info)
+            iohub_base_config_dlg = ppgui.DlgFromDict(dictionary = iohub_base_config_info,
+                                                       title = 'SELECT IOHub base config file to continue...')
 
         # Merge iohub configuration files
         # ---------------------------------------------------------------------
@@ -187,35 +207,35 @@ if __name__ == "__main__":
 
         # Determine which experiment configuration file to use
         # ---------------------------------------------------------------------
-        # os.chdir(config_dir)
-        # expt_files = ['Select']
-        # expt_files.extend(glob.glob('./expt_*.yaml'))
-        # os.chdir(mod_dir)
-        #
-        # expt_config_info = {'Experiment config file = ': expt_files}
-        # expt_config_info = dict(expt_config_info)
-        #
-        # expt_config_dlg = ppgui.DlgFromDict(dictionary = expt_config_info,
-        #                                      title = 'Select experiment config file')
-        # if not expt_config_dlg.OK:
-        #     return -1
-        #
-        # while expt_config_info.values()[0] == u'Select' and expt_config_dlg.OK:
-        #     expt_config_info = \
-        #         dict(expt_config_info)
-        #     expt_config_dlg = \
-        #         ppgui.DlgFromDict(dictionary=expt_config_info,
-        #                            title='SELECT experiment config file to continue...')
-        #
-        # if not expt_config_dlg.OK:
-        #     return -1
+        os.chdir(config_dir)
+        expt_files = ['Select']
+        expt_files.extend(glob.glob('./expt_*.yaml'))
+        os.chdir(mod_dir)
+
+        expt_config_info = {'Experiment config file = ': expt_files}
+        expt_config_info = dict(expt_config_info)
+
+        expt_config_dlg = ppgui.DlgFromDict(dictionary = expt_config_info,
+                                             title = 'Select experiment config file')
+        if not expt_config_dlg.OK:
+            return -1
+
+        while expt_config_info.values()[0] == u'Select' and expt_config_dlg.OK:
+            expt_config_info = \
+                dict(expt_config_info)
+            expt_config_dlg = \
+                ppgui.DlgFromDict(dictionary=expt_config_info,
+                                   title='SELECT experiment config file to continue...')
+
+        if not expt_config_dlg.OK:
+            return -1
 
         # Start the experiment
         # ---------------------------------------------------------------------
-        runtime = ExperimentRuntime(config_dir, 'expt_itch.yaml')
-        runtime.start(('iohub_keyboard.yaml', mod_dir))
-        # runtime = ExperimentRuntime(config_dir, expt_config_info.values()[0])
-        # runtime.start((dlg_info.values()[0],mod_dir))
+        # runtime = ExperimentRuntime(config_dir, 'expt_itch.yaml')
+        # runtime.start(('iohub_keyboard.yaml', mod_dir))
+        runtime = ExperimentRuntime(config_dir, expt_config_info.values()[0])
+        runtime.start((dlg_info.values()[0],mod_dir))
 
     # Get the current directory, using a method that does not rely on __FILE__
     # or the accuracy of the value of __FILE__.

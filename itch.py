@@ -136,6 +136,7 @@ def collect_response(rd, kb, *args, **kwargs):
     triggered = None
     other_keys = None
     ev_keys_pressed = None
+    other_keys_pressed = None
     log = None
 
     if len(args) == 0:
@@ -146,10 +147,16 @@ def collect_response(rd, kb, *args, **kwargs):
                 other_keys = kwargs.get('other_keys')
             if 't0' in kwargs:
                 t0 = kwargs.get('t0')
+            else:
+                t0 = True
             if 'min_rt' in kwargs:
                 min_rt = kwargs.get('min_rt')
+            else:
+                min_rt = 0
             if 'max_rt' in kwargs:
                 max_rt = kwargs.get('max_rt')
+            else:
+                max_rt = np.inf
     elif len(args) == 1:
         other_keys = args[0]
         t0 = True
@@ -211,21 +218,21 @@ def collect_response(rd, kb, *args, **kwargs):
             if rd_class == 'Keyboard':
 
                 # Have any abort keys been pressed?
-                if any([re.findall(key, ev.key) for key in esc_keys]):
+                if any([re.findall('^'+key+'$', ev.key) for key in esc_keys]):
                     print('Warning: Escape key pressed - Experiment is terminated')
                     pp.core.quit()
 
                 # Have any other keys been pressed (e.g. toggle keys for moving
                 # between instruction screens)
                 if other_keys:
-                    if any([re.findall(key, ev.key) for key in
+                    if any([re.findall('^'+key+'$', ev.key) for key in
                             other_keys]):
                         other_keys_pressed = ev.key
                         print other_keys_pressed
                         return key_count, other_keys_pressed
 
                 # If any of the event keys are in event data
-                if any([re.findall(key, ev.key) for key in rsp_keys]):
+                if any([re.findall('^'+key+'$', ev.key) for key in rsp_keys]):
                     key_count[ev.key] += 1
                     if isinstance(log, pd.core.series.Series):
                         # Only log time of first response key event
@@ -239,20 +246,20 @@ def collect_response(rd, kb, *args, **kwargs):
                 for kbev in kb['client'].getEvents():
 
                     # Have any abort keys been pressed?
-                    if any([re.findall(key, kbev.key) for key in esc_keys]):
+                    if any([re.findall('^'+key+'$', kbev.key) for key in esc_keys]):
                         print(
                             'Warning: Escape key pressed - Experiment is '
                             'terminated')
                         pp.core.quit()
 
                     if other_keys:
-                        if any([re.findall(key, kbev.key) for key in
+                        if any([re.findall('^'+key+'$', kbev.key) for key in
                                 other_keys]):
                             other_keys_pressed = kbev.key
                             return key_count, other_keys_pressed
 
                     # If any of the event keys are in event data
-                    if any([re.findall(key, ev.data) for key in rsp_keys]):
+                    if any([re.findall('^'+key+'$', ev.data) for key in rsp_keys]):
                         key_count[ev.data] += 1
 
                         # Only log time of first response key event
@@ -353,9 +360,12 @@ def define_stimulus(window, stim_info, *args):
     else:
         stim_type = ''
 
-    n_stimulus = 1
+    if 'content' in stim_info:
+        n_stimulus = len(stim_info['content'])
+    else:
+        n_stimulus = 1
 
-    # Initialize list of stimuli
+        # Initialize list of stimuli
     stimulus = [None] * n_stimulus
 
     for i in range(n_stimulus):
@@ -452,9 +462,19 @@ def define_stimulus(window, stim_info, *args):
 
         # Image stimuli
         # ---------------------------------------------------------------------
-        else:
-            # TODO: Implement UserWarning exception here.
-            None
+        elif type(stimulus[i]) is pp.visual.ImageStim:
+
+            # Set stimulus content
+            stimulus[i].setImage(stim_info['content'][i])
+
+            # Set other parameters
+            if 'ori' in stim_info:
+                if stim_info['ori']:
+                    stimulus[i].setOri(stim_info['ori'])
+
+            if 'pos' in stim_info:
+                if stim_info['pos']:
+                    stimulus[i].setPos(stim_info['pos'])
 
 
     return stimulus
@@ -582,14 +602,14 @@ def evaluate_block(config,df,block_id,block_log):
         tt = {'catch_ss_accuracy': 'catch_ss',
               'catch_ll_accuracy': 'catch_ll',
               'check_instr_accuracy': 'check_instr',
-              'monotonic_decrease_ip': 'standard',
-              'no_discounting': 'standard'
+              'monotonicity': 'standard',
+              'discounting': 'standard'
               }[stat_type]
 
 
         if stat_type.endswith('accuracy'):
             data = df.trial_correct[df.trial_type == tt].value_counts()
-        elif stat_type in ['monotonic_decrease_ip', 'no_discounting']:
+        elif stat_type in ['monotonicity', 'discounting']:
             # Indifference points
             data = \
                 df.loc[df.trial_type == tt, ['trial_ix','t_l', 'm_s']]. \
@@ -624,8 +644,8 @@ def evaluate_block(config,df,block_id,block_log):
 
         # Assertions
         known_stat_types = ['catch_ss_accuracy', 'catch_ll_accuracy',
-                            'check_instr_accuracy', 'monotonic_decrease_ip',
-                            'no_discounting']
+                            'check_instr_accuracy', 'monotonicity',
+                            'discounting']
         assert stat_type in known_stat_types, 'unknown stat_type %s' % \
                                               stat_type
 
@@ -639,7 +659,7 @@ def evaluate_block(config,df,block_id,block_log):
             else:
                 desc_stat = 0
 
-        elif stat_type == 'monotonic_decrease_ip':
+        elif stat_type == 'monotonicity':
             if data.empty:
                 desc_stat = np.nan
             else:
@@ -648,7 +668,7 @@ def evaluate_block(config,df,block_id,block_log):
                 # previous indifference point by 20% of the LL amount.
                 # This is criterion 1 from Johnson & Bickel (2008)
                 desc_stat = np.diff(data) / config['ip_procedure']['m_l'] * 100
-        elif stat_type == 'no_discounting':
+        elif stat_type == 'discounting':
             if data.empty:
                 desc_stat = np.nan
             else:
@@ -724,14 +744,14 @@ def evaluate_block(config,df,block_id,block_log):
         str_stat_col = {'catch_ss_accuracy': 'catch_ss_accuracy',
                       'catch_ll_accuracy': 'catch_ll_accuracy',
                       'check_instr_accuracy': 'check_instr_accuracy',
-                      'monotonic_decrease_ip': 'monotonic_decrease_ip',
-                      'no_discounting': 'no_discounting'
+                      'monotonicity': 'monotonicity',
+                      'discounting': 'discounting'
                       }
         str_crit_col = {'catch_ss_accuracy': 'catch_ss_accuracy_crit_met',
                       'catch_ll_accuracy': 'catch_ll_accuracy_crit_met',
                       'check_instr_accuracy': 'check_instr_accuracy_crit_met',
-                      'monotonic_decrease_ip': 'monotonic_decrease_ip_crit_met',
-                      'no_discounting': 'no_discounting_crit_met'
+                      'monotonicity': 'monotonicity_crit_met',
+                      'discounting': 'discounting_crit_met'
                       }
 
         # Column names for statistic and criterion
@@ -739,7 +759,7 @@ def evaluate_block(config,df,block_id,block_log):
         col_crit = str_crit_col[stat_type]
 
         # Update the log
-        if col_stat == 'monotonic_decrease_ip':
+        if col_stat == 'monotonicity':
             log[col_stat] = max(stat)
         else:
             log[col_stat] = stat
@@ -813,11 +833,11 @@ def evaluate_block(config,df,block_id,block_log):
         stat_str = {'catch_ss_accuracy': 'accuracy:  %0.f%% correct',
                     'catch_ll_accuracy': 'accuracy:  %0.f%% correct',
                     'check_instr_accuracy': 'accuracy:  %0.f%% correct',
-                    'monotonic_decrease_ip': 'smallest IP difference: %0.f%% (of m_l)',
-                    'no_discounting': 'discounting at longest delay: %0.f%%'
+                    'monotonicity': 'min. difference: %0.f%%',
+                    'discounting': 'discounting at longest delay: %0.f%%'
                     }
 
-        if stat_type == 'monotonic_decrease_ip':
+        if stat_type == 'monotonicity':
             perform_text.setText(stat_str[stat_type] % max(stat))
         else:
             perform_text.setText(stat_str[stat_type] % stat)
@@ -871,16 +891,16 @@ def evaluate_block(config,df,block_id,block_log):
     trial_type_exist = {'catch_ss_accuracy': any(tt == 'catch_ss'),
                         'catch_ll_accuracy': any(tt == 'catch_ll'),
                         'check_instr_accuracy': any(tt == 'check_instr'),
-                        'monotonic_decrease_ip': any(tt == 'standard'),
-                        'no_discounting': any(tt == 'standard')
+                        'monotonicity': any(tt == 'standard'),
+                        'discounting': any(tt == 'standard')
                         }
 
     # Stimulus
     stimulus = {'catch_ss_accuracy': 'catch_ss',
                 'catch_ll_accuracy': 'catch_ll',
                 'check_instr_accuracy': 'check_instr',
-                'monotonic_decrease_ip': 'ip_decrease',
-                'no_discounting': 'discounting'}
+                'monotonicity': 'ip_decrease',
+                'discounting': 'discounting'}
 
     # Task performance features to provide feedback on
     features = config['feedback']['block']['features']
@@ -896,7 +916,7 @@ def evaluate_block(config,df,block_id,block_log):
 
     for feat in sorted(feedback_feat):
 
-        if feat == 'monotonic_decrease_ip':
+        if feat == 'monotonicity':
             max_dev = config['feedback']['block']['features'][feat]['criterion']
         else:
             lower_bound, upper_bound = get_bounds(config=config,
@@ -912,7 +932,7 @@ def evaluate_block(config,df,block_id,block_log):
             desc_stat = get_desc_stat(config=config,
                                       stat_type=feat,
                                       data=data)
-            if feat == 'monotonic_decrease_ip':
+            if feat == 'monotonicity':
                 this_crit_met = assess_performance(stat=desc_stat,
                                                    max_dev=max_dev)
             else:
@@ -1432,23 +1452,34 @@ def init_config(runtime, mod_dir):
     # INSTRUCTION
     ###########################################################################
 
-    # config['stimuli']['instruction'] = \
-    #     {instr_type: define_stimulus(window,
-    #                                  config['instruction'][instr_type])
-    #      for instr_type in config['instruction']
-    #      if config['instruction'][instr_type]['content'] is not None}
-    #
-    # instr_list_p = pd.read_csv(
-    #     config['instruction']['practice']['instruction_list_file'],
-    #     error_bad_lines=False)
-    # instr_list_p = check_df_from_csv_file(df=instr_list_p)
-    # config['instruction']['practice']['list'] = instr_list_p
-    #
-    # instr_list_e = pd.read_csv(
-    #     config['instruction']['experiment']['instruction_list_file'],
-    #     error_bad_lines=False)
-    # instr_list_e = check_df_from_csv_file(df=instr_list_e)
-    # config['instruction']['experiment']['list'] = instr_list_e
+    if user_def_params['instruction']:
+        config['instruction']['enable'] = True
+    else:
+        config['instruction']['enable'] = False
+
+
+    config['stimuli']['instruction'] = \
+        {instr_type: define_stimulus(window,
+                                     config['instruction'][instr_type],
+                                     config['instruction']['experiment'][
+                                         'name']
+                                     )
+         for instr_type in ['start', 'practice', 'ip_procedure',
+                       'block_repeat', 'experiment', 'break', 'end']
+         if config['instruction'][instr_type]['content'] is not None}
+
+
+    instr_list_p = pd.read_csv(
+        config['instruction']['practice']['instruction_list_file'],
+        error_bad_lines=False)
+    instr_list_p = check_df_from_csv_file(df=instr_list_p)
+    config['instruction']['practice']['list'] = instr_list_p
+
+    instr_list_e = pd.read_csv(
+        config['instruction']['experiment']['instruction_list_file'],
+        error_bad_lines=False)
+    instr_list_e = check_df_from_csv_file(df=instr_list_e)
+    config['instruction']['experiment']['list'] = instr_list_e
 
     ###########################################################################
     # PRACTICE
@@ -1459,11 +1490,19 @@ def init_config(runtime, mod_dir):
     else:
         config['practice']['enable'] = False
 
-    # If a trial_listFile exists, use this
-    tr_list_p = pd.read_csv(config['practice']['trial_list_file'],
-                          error_bad_lines=False)
-    # tr_list_p = check_df_from_csv_file(df=tr_list_p)
-    config['practice']['trial_list'] = tr_list_p
+
+    ###########################################################################
+    # INDIFFERENCE POINT PROCEDURE
+    ###########################################################################
+
+    if user_def_params['ip_procedure']:
+        config['ip_procedure']['enable'] = True
+    else:
+        config['ip_procedure']['enable'] = False
+
+    config['ip_procedure']['m_l'] = \
+        2 ** (config['ip_procedure']['n_staircase_trial'] + 1) * \
+        config['ip_procedure']['step_size']
 
     ###########################################################################
     # EXPERIMENT
@@ -1473,19 +1512,6 @@ def init_config(runtime, mod_dir):
         config['experiment']['enable'] = True
     else:
         config['experiment']['enable'] = False
-
-    tr_list_e = pd.read_csv(config['experiment']['trial_list_file'],
-                            error_bad_lines=False)
-    # tr_list_e = check_df_from_csv_file(df=tr_list_e)
-    config['experiment']['trial_list'] = tr_list_e
-
-    ###########################################################################
-    # INDIFFERENCE POINT PROCEDURE
-    ###########################################################################
-
-    config['ip_procedure']['m_l'] = \
-        2 ** (config['ip_procedure']['n_staircase_trial'] + 1) * \
-        config['ip_procedure']['step_size']
 
     ###########################################################################
     # PERFORMANCE REQUIREMENTS
@@ -1716,8 +1742,8 @@ def init_log(config):
 
         # Choice options
         # =====================================================================
-        choice_opt_columns = ['trial_type', 'm_s', 'm_l', 'm_unit', 't_s',
-                              't_l', 't_unit']
+        choice_opt_columns = ['trial_type', 'm_s_cat', 'm_s', 'm_l', 'm_unit',
+                              't_s', 't_l', 't_unit']
 
         # Response event times
         # =====================================================================
@@ -1790,21 +1816,21 @@ def init_log(config):
 
         # Indifference points increasing monotonically
         # =====================================================================
-        if config['feedback']['block']['features']['monotonic_decrease_ip'][
+        if config['feedback']['block']['features']['monotonicity'][
             'enable']:
-            monotonic_decrease_ip_cols = ['monotonic_decrease_ip',
-                                          'monotonic_decrease_ip_crit_met']
+            monotonicity_cols = ['monotonicity',
+                                          'monotonicity_crit_met']
         else:
-            monotonic_decrease_ip_cols = []
+            monotonicity_cols = []
 
         # Indifference points decreasing sufficiently
         # =====================================================================
-        if config['feedback']['block']['features']['no_discounting'][
+        if config['feedback']['block']['features']['discounting'][
             'enable']:
-            no_discounting_cols = ['no_discounting',
-                                   'no_discounting_crit_met']
+            discounting_cols = ['discounting',
+                                   'discounting_crit_met']
         else:
-            no_discounting_cols = []
+            discounting_cols = []
 
         # Put it together
         # =====================================================================
@@ -1813,8 +1839,8 @@ def init_log(config):
         columns += catch_ss_accuracy_cols
         columns += catch_ll_accuracy_cols
         columns += check_instr_accuracy_cols
-        columns += monotonic_decrease_ip_cols
-        columns += no_discounting_cols
+        columns += monotonicity_cols
+        columns += discounting_cols
 
         return columns
 
@@ -2038,6 +2064,12 @@ def make_trial_list(config, stage_id):
         # Only select data from the last IP procedure iteration; earlier
         # iterations, if any, did not meet preset performance requirements (
         # hence the IP procedure was repeated)
+        if ipp_data.empty:
+            print('No indifference points available for subject {0:d} (group: {1:d})'.\
+                format(config['subject']['subject_ix'],
+                       config['subject']['group_ix']))
+            pp.core.quit()
+
         ipp_data = \
             ipp_data[(ipp_data.block_id.str.startswith('i')) & \
                      (ipp_data.iter_ix == max(ipp_data.iter_ix.unique())) & \
@@ -2070,9 +2102,11 @@ def make_trial_list(config, stage_id):
                                 config[stage_id]['m_s'])),
                 columns=['trial_type','m_s'])
 
+        trial_list['m_s_cat'] = 'NA'
         trial_list['m_l'] = config[stage_id]['m_l']
         trial_list['t_s'] = config[stage_id]['t_s']
         trial_list['t_l'] = config[stage_id]['t_l']
+
     elif stage_id == 'ip_procedure':
         n_trial_per_t_l = \
             n_staircase_steps + \
@@ -2091,6 +2125,8 @@ def make_trial_list(config, stage_id):
                 list(it.product([None]*n_trial_per_t_l,
                                 t_ls)),
                 columns=['trial_type', 't_l'])
+
+        trial_list['m_s_cat'] = 'NA'
 
         # Shuffle trial order to make catch trials unpredictable
         for t_l_ix, t_l in enumerate(t_ls):
@@ -2117,10 +2153,12 @@ def make_trial_list(config, stage_id):
         trial_list['m_s'] = None
 
         # Add m_s
-        for t_l in t_ls:
-            m_s = {'below_ip': indifference_points[t_l] - 2 * m_s_step,
+        for i_t_l, t_l in enumerate(t_ls):
+
+            adjustment_factor = 2 * (i_t_l + 1)
+            m_s = {'below_ip': indifference_points[t_l] - adjustment_factor * m_s_step,
                    'at_ip': indifference_points[t_l],
-                   'above_ip': indifference_points[t_l] + 2 * m_s_step
+                   'above_ip': indifference_points[t_l] + adjustment_factor * m_s_step
                    }
 
             # If a participant in the indifference procedure always chooses
@@ -2132,9 +2170,11 @@ def make_trial_list(config, stage_id):
             # indifference point:
 
             if m_s['below_ip'] == 0:
-                m_s['below_ip'] = m_s['below_ip'] + m_s_step
+                adjustment_factor = (i_t_l + 1)
+                m_s['below_ip'] = indifference_points[t_l] - adjustment_factor * m_s_step
             elif m_s['above_ip'] == config['ip_procedure']['m_l']:
-                m_s['above_ip'] = m_s['above_ip'] - m_s_step
+                adjustment_factor = (i_t_l + 1)
+                m_s['above_ip'] = indifference_points[t_l] + adjustment_factor * m_s_step
 
             for m_s_cat in m_s_cats:
 
@@ -2153,15 +2193,23 @@ def make_trial_list(config, stage_id):
     if stage_id in ['practice', 'ip_procedure']:
         time_frames = 'neutral'
         trial_list['framing'] = time_frames
-
-    # Add block_ix, block_id
-    for block_ix, frame in enumerate(time_frames):
-        trial_list. \
-            loc[(trial_list.framing == frame), 'block_ix'] = \
-            block_ix
-        trial_list. \
-            loc[(trial_list.framing == frame), 'block_id'] = \
-            '%s%.3d' % (stage_id, block_ix)
+        block_ix = 0
+        trial_list['block_ix'] = block_ix
+        trial_list['block_id'] = '%s%.3d' % (stage_id, block_ix)
+    elif isinstance(time_frames, str):
+        trial_list['framing'] = time_frames
+        block_ix = 0
+        trial_list['block_ix'] = block_ix
+        trial_list['block_id'] = '%s%.3d' % (stage_id, block_ix)
+    else:
+        # Add block_ix, block_id
+        for block_ix, frame in enumerate(time_frames):
+            trial_list. \
+                loc[(trial_list.framing == frame), 'block_ix'] = \
+                block_ix
+            trial_list. \
+                loc[(trial_list.framing == frame), 'block_id'] = \
+                '%s%.3d' % (stage_id, block_ix)
 
 
     if stage_id == 'practice':
@@ -2217,10 +2265,15 @@ def make_trial_list(config, stage_id):
         else:
             instr_check_trials = trial_list.sample(n=0)
 
-        # trial_list = trial_list.append(catch_ss_trials)
-        trial_list = catch_ss_trials
+        trial_list = trial_list.append(catch_ss_trials)
         trial_list = trial_list.append(catch_ll_trials)
         trial_list = trial_list.append(instr_check_trials)
+
+    # Make sure that certain variables are represented as ints rather than
+    # floats
+    trial_list['block_ix'] = trial_list['block_ix'].astype(int)
+    trial_list['t_s'] = trial_list['t_s'].astype(int)
+    trial_list['t_l'] = trial_list['t_l'].astype(int)
 
 
 
@@ -2247,6 +2300,7 @@ def make_trial_list(config, stage_id):
 
     # Fill in trial_ix
     trial_list['trial_ix'] = range(trial_list.shape[0])
+    trial_list['trial_ix'] = trial_list['trial_ix'].astype(int)
 
     # Sort columns
     # -------------------------------------------------------------------------
@@ -2254,8 +2308,8 @@ def make_trial_list(config, stage_id):
     if stage_id in ['practice', 'ip_procedure']:
         col_order = ['session_ix', 'block_ix', 'block_id', 'trial_ix',
                      'waited_for_trigger', 'framing',
-                     'trial_type', 'm_s', 'm_l', 'm_unit', 't_s', 't_l',
-                     't_unit']
+                     'trial_type', 'm_s', 'm_s_cat', 'm_l', 'm_unit', 't_s',
+                     't_l', 't_unit']
     elif stage_id == 'experiment':
         col_order = ['session_ix', 'block_ix', 'block_id', 'trial_ix',
                      'waited_for_trigger', 'framing',
@@ -2290,7 +2344,8 @@ def present_instruction(config, block_type, *args):
 
     # Process variable arguments
     if len(args) > 0:
-        if block_type == 'practice' or block_type == 'experiment':
+        if block_type == 'practice' or block_type == 'experiment' or \
+                block_type == 'break':
             block_ix = args[0]
         elif block_type == 'block_repeat':
             instruction_stim_ix = args[0]
@@ -2303,25 +2358,32 @@ def present_instruction(config, block_type, *args):
     rd = config['apparatus']['rd']
     kb = config['apparatus']['kb']
     toggle_keys = kb['settings']['toggle_keys']
-    instruction_stim = config['stimuli']['instruction'][type]
+    trigger_keys = kb['settings']['trigger_keys']
+    esc_keys = kb['settings']['esc_keys']
+    instruction_stim = config['stimuli']['instruction'][block_type]
 
     stim_ix = 0
 
     # Determine which instruction screens to show, depending on the
     # experiment phase
-    if type == 'practice' or type == 'experiment':
-        session_ix = config['session']['session_ix']
-        instruction_list = config['instruction'][type]['list']
-
-        pattern = {'session_ix': [session_ix],
-                   'block_ix': [block_ix]}
-        ix = instruction_list.index.tolist()
-        i_row = instruction_list[pattern.keys()].isin(pattern).all(1)
-        stim_list = instruction_list.loc[i_row, 'instruction_ix'].astype(
-            int).tolist()
-    elif type == 'block_repeat':
+    # if block_type == 'practice' or block_type == 'experiment':
+    #     session_ix = config['session']['session_ix']
+    #     instruction_list = config['instruction'][block_type]['list']
+    #
+    #     pattern = {'session_ix': [session_ix],
+    #                'block_ix': [block_ix]}
+    #     ix = instruction_list.index.tolist()
+    #     i_row = instruction_list[pattern.keys()].isin(pattern).all(1)
+    #     stim_list = instruction_list.loc[i_row, 'instruction_ix'].astype(
+    #         int).tolist()
+    if block_type == 'block_repeat':
         stim_list = [instruction_stim_ix]
-    elif type == 'start' or type == 'end':
+    elif block_type == 'start' or \
+            block_type == 'practice' or \
+            block_type == 'experiment' or \
+            block_type == 'end' or \
+            block_type == 'ip_procedure' or \
+            block_type == 'break':
         stim_list = range(len(instruction_stim))
 
     # Show instruction screens and monitor keyboard and response device inputs
@@ -2339,29 +2401,53 @@ def present_instruction(config, block_type, *args):
         instruction_stim[stim_list[stim_ix]].draw()
         window.flip()
 
+        if block_type == 'end':
+            pp.core.wait(15)
+            return
+
         while no_key_pressed:
 
             # Collect responses
-            rd_key_count, toggle_keys_pressed = \
-                collect_response(rd, kb, other_keys=toggle_keys)
+            rd_key_count, other_keys_pressed = \
+                collect_response(rd, kb, other_keys=toggle_keys + trigger_keys)
 
             # If user pressed key move to next stimulus
-            if sum(rd_key_count.values()) > 0:
-                window.flip(clearBuffer=True)
-                stim_ix += 1
-                break
+            # if sum(rd_key_count.values()) > 0:
+            #     window.flip(clearBuffer=True)
+            #     stim_ix += 1
+            #     break
 
-            # If toggle keys are used move to next or previous stimulus
-            if toggle_keys_pressed:
-                window.flip(clearBuffer=True)
-                if toggle_keys_pressed == toggle_keys[0]:
-                    stim_ix -= 1
-                    if stim_ix < 0:
-                        stim_ix = 0
-                    break
-                elif toggle_keys_pressed == toggle_keys[1]:
-                    stim_ix += 1
-                    break
+            if other_keys_pressed:
+
+                if stim_ix < len(stim_list) -1:
+
+                    if other_keys_pressed in toggle_keys:
+                        window.flip(clearBuffer=True)
+                        if other_keys_pressed == toggle_keys[0]:
+                            stim_ix -= 1
+                            if stim_ix < 0:
+                                stim_ix = 0
+                            break
+                        elif other_keys_pressed == toggle_keys[1]:
+                            stim_ix += 1
+                            break
+                    else:
+                        break
+                else:
+                    if other_keys_pressed in [toggle_keys[0]] + trigger_keys:
+                        window.flip(clearBuffer=True)
+                        if other_keys_pressed == toggle_keys[0]:
+                            stim_ix -= 1
+                            if stim_ix < 0:
+                                stim_ix = 0
+                            break
+                        elif other_keys_pressed in trigger_keys:
+                            return
+                    else:
+                        break
+
+
+
 def run_block(config,block_id,trial_list,block_log):
     """
     Runs all trials comprising a block
@@ -2462,6 +2548,7 @@ def run_block(config,block_id,trial_list,block_log):
                         'min_duration'],
                     'iti_dur': iti_dur,
                     'refresh_time': 1 / frame_rate}
+    t_trial_end = -np.inf
 
     # Put trial_list indices in a list for easy reference
     trial_list_ixs = trial_list.index.tolist()
@@ -2502,7 +2589,8 @@ def run_block(config,block_id,trial_list,block_log):
             copy_series_values(var_names=['session_ix', 'block_ix', 'iter_ix',
                                           'trial_ix',
                                           'trial_type', 'waited_for_trigger',
-                                          'framing', 'm_l', 'm_unit', 't_s',
+                                          'framing', 'm_s_cat', 'm_l',
+                                          'm_unit', 't_s',
                                           't_l', 't_unit'],
                                source_series=trial_list.loc[trial_list_ix],
                                target_series=pd.Series(index=trial_cols))
@@ -2582,6 +2670,8 @@ def run_block(config,block_id,trial_list,block_log):
         # <editor-fold> # desc="2.2. Present stimuli and collect responses"
         # 2.2. Present stimuli and collect responses
         # =====================================================================
+        pp.core.wait(t_trial_end + trial_timing['iti_dur'] - pp.core.getTime())
+
         this_trial_log = \
             run_trial(config=config,
                       window=config['window']['window'],
@@ -2597,6 +2687,8 @@ def run_block(config,block_id,trial_list,block_log):
                       stimuli=stimuli,
                       min_feedback_dur=min_feedback_dur
                       )
+
+        t_trial_end = pp.core.getTime()
 
         # </editor-fold> # desc="2.2. Present stimuli and collect responses"
         # <editor-fold> # desc="2.3. Log timings"
@@ -2723,7 +2815,7 @@ def run_stage(config, stage_id, trial_list):
 
     """
 
-    block_ixs = trial_list['block_ix'].unique()
+    block_ixs = trial_list['block_ix'].unique().astype(int)
     block_cols = config['log']['performance']['block']['columns']
     block_log = pd.DataFrame(index=block_ixs,
                              columns=block_cols)
@@ -2756,6 +2848,9 @@ def run_stage(config, stage_id, trial_list):
             trial_list_block.loc[trial_list_block['block_ix'] == block_ix,
                                  'iter_ix'] = iter_ix
 
+            trial_list_block['iter_ix'] = trial_list_block[
+                                              'iter_ix'].astype(int)
+
             # present_instruction(config, stage_id, block_ix)
 
             this_block_log, all_crit_met = \
@@ -2770,6 +2865,10 @@ def run_stage(config, stage_id, trial_list):
                       'a+') as fileObj:
                 this_block_log.to_csv(fileObj, index=False, header=False,
                                       na_rep=np.nan)
+
+            if (stage_id == 'experiment') & (block_ix < block_ixs[-1]):
+                present_instruction(config, 'break', block_ix)
+
 
             # TODO: implement force_repeat procedure
             if force_repeat:
@@ -2940,7 +3039,7 @@ def run_trial(config,wait_for_trigger, hub,trial_log,
     # Present intertrial interval
     # -------------------------------------------------------------------------
     # stimuli['iti'][0].setAutoDraw(True)
-    stimuli['iti'][0].setText('o')
+    stimuli['iti'][0].setText(' ')
     stimuli['iti'][0].draw()
     window.flip()
 
