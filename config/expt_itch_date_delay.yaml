@@ -918,7 +918,7 @@ experiment:
     # choose SS
     n_catch_trial_ss: 4
     # Number of catch trials (per framing block) on which people should choose LL
-    n_catch_trial_ll: 3
+    n_catch_trial_ll: 4
     # Number instruction manipulation check trials (per framing block)
     n_instr_manip_check_trial: 0
     # Interval between instruction stimulus and SS & LL option stimuli, in seconds
