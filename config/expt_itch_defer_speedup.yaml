@@ -922,11 +922,11 @@ ip_procedure:
 experiment:
     # Number of catch trials (per framing block) on which people should
     # choose SS
-    n_catch_trial_ss: 2
+    n_catch_trial_ss: 3
     # Number of catch trials (per framing block) on which people should choose LL
-    n_catch_trial_ll: 2
+    n_catch_trial_ll: 3
     # Number instruction manipulation check trials (per framing block)
-    n_instr_manip_check_trial: 3
+    n_instr_manip_check_trial: 2
     # Interval between instruction stimulus and SS & LL option stimuli, in seconds
     isi_dur: 1.2
     # Minimum response time, in seconds
