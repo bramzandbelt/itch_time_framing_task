@@ -16,7 +16,7 @@ title: 'Cognitive mechanisms time framing effects in intertemporal choice'
 #
 # Here, the code is equal to the DCCN project identifier
 #
-code: 'NA'
+code: 'pilot'
 
 # ethics_protocol_id: string
 #
@@ -1089,7 +1089,7 @@ log:
     # If nothing specified, the log files will be written in a directory
     #
     #
-    dir: /Users/bramzandbelt/surfdrive/projects/BEWITCHING/itch_time_framing_task/log/
+    dir: ./log/
 
     # runtime: dict
     #
