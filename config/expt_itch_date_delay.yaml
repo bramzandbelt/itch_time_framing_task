@@ -777,14 +777,6 @@ responses:
     # response device.
     #
     #
-# If the task contains two responses (e.g. 'f', and 'h'), and each response
-# consists of a single button press, then the input would be ['f','h'] If  the
-# task contains two responses, and each response requires that two buttons are
-# pressed (e.g. 'f' and 'h' for one stimulus and 'v' and 'b' for another), then
-# the value would look like this:
-
-    #
-
 
 #    The keys with which the subjects responds, separately for each response
     # device class.
@@ -794,7 +786,7 @@ responses:
     #
 
     response_keys_per_class:
-        Keyboard: [f, h, return]
+        Keyboard: [f, j, return]
         Serial:   [f,b]
         fORP:     [f,b]
     # abort_keys: list
