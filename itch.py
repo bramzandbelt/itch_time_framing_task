@@ -1021,17 +1021,47 @@ def evaluate_block(config,df,block_id,block_log):
 
         block_feedback_stim['feedback'][i_stim].setAutoDraw(True)
 
+    # Tell participant whether or not (s)he can continue
+    block_feedback_instr = \
+        define_stimulus(window=window,
+                        stim_info={'type': 'TextStim',
+                                   'name': 'feedback',
+                                   'color': [255, 255, 255],
+                                   'opacity': 1,
+                                   'font': 'Helvetica',
+                                   'height': 1,
+                                   'ori': 0,
+                                   'pos': [0,
+                                           (float(n_lines) - 1) / 2 - (i_stim
+                                                                       + 3)]})
+    block_feedback_instr[0].setAutoDraw(True)
+
+    kb = config['apparatus']['kb']
+    toggle_keys = kb['settings']['toggle_keys']
+    trigger_keys = kb['settings']['trigger_keys']
+    esc_keys = kb['settings']['esc_keys']
+
+    if all_crit_met:
+        block_feedback_instr[0].setText("To continue to the main experiment, press '%s'" % trigger_keys[0])
+    else:
+        block_feedback_instr[0].setText("Please see the experimenter now.")
+
     window.flip()
 
-    t_now = pp.core.getTime()
-    feedback_duration = config['feedback']['block']['duration']
-    pp.core.wait(feedback_duration)
+    # Wait until escape or trigger keys are pressed
+    evs = kb['client'].waitForKeys(keys=esc_keys + trigger_keys)
+
+    if set(esc_keys) & set([ev.key for ev in evs]):
+        print('Abort key pressed. Quit PsychoPy now!')
+        pp.core.quit()
 
     block_title_stim.setAutoDraw(False)
     for i_stim in range(n_lines):
         block_feedback_stim['stim'][i_stim].setAutoDraw(False)
         block_feedback_stim['performance'][i_stim].setAutoDraw(False)
         block_feedback_stim['feedback'][i_stim].setAutoDraw(False)
+    block_feedback_instr[0].setAutoDraw(False)
+
     window.flip()
 
     return all_crit_met

@@ -1003,7 +1003,6 @@ feedback:
         # - if two values, then duration of feedback is in between min (1st element) and max (2nd element) and experiment continues when subject presses a button or maximum duration has passed
         #
         #
-        duration: 10
         features:
             catch_ss_accuracy:
                 enable: True
