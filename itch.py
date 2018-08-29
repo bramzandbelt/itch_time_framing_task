@@ -601,7 +601,7 @@ def evaluate_block(config,df,block_id,block_log):
 
         tt = {'catch_ss_accuracy': 'catch_ss',
               'catch_ll_accuracy': 'catch_ll',
-              'check_instr_accuracy': 'check_instr',
+              'check_instr_accuracy': 'instr_check',
               'too_fast_responses': 'standard',
               'monotonicity': 'standard',
               'discounting': 'standard'
@@ -752,11 +752,12 @@ def evaluate_block(config,df,block_id,block_log):
                       'discounting': 'discounting'
                       }
         str_crit_col = {'catch_ss_accuracy': 'catch_ss_accuracy_crit_met',
-                      'catch_ll_accuracy': 'catch_ll_accuracy_crit_met',
-                      'too_fast_responses': 'too_fast_responses_crit_met',
-                      'monotonicity': 'monotonicity_crit_met',
-                      'discounting': 'discounting_crit_met'
-                      }
+                        'catch_ll_accuracy': 'catch_ll_accuracy_crit_met',
+                        'check_instr_accuracy': 'check_instr_accuracy_crit_met',
+                        'too_fast_responses': 'too_fast_responses_crit_met',
+                        'monotonicity': 'monotonicity_crit_met',
+                        'discounting': 'discounting_crit_met'
+                        }
 
         # Column names for statistic and criterion
         col_stat = str_stat_col[stat_type]
@@ -905,7 +906,7 @@ def evaluate_block(config,df,block_id,block_log):
     tt = df.trial_type
     trial_type_exist = {'catch_ss_accuracy': any(tt == 'catch_ss'),
                         'catch_ll_accuracy': any(tt == 'catch_ll'),
-                        'check_instr_accuracy': any(tt == 'check_instr'),
+                        'check_instr_accuracy': any(tt == 'instr_check'),
                         'too_fast_responses': any(tt == 'standard'),
                         'monotonicity': any(tt == 'standard'),
                         'discounting': any(tt == 'standard')
@@ -914,7 +915,7 @@ def evaluate_block(config,df,block_id,block_log):
     # Stimulus
     stimulus = {'catch_ss_accuracy': 'catch_ss',
                 'catch_ll_accuracy': 'catch_ll',
-                'check_instr_accuracy': 'check_instr',
+                'check_instr_accuracy': 'instr_check',
                 'too_fast_responses': 'too_fast_responses',
                 'monotonicity': 'ip_decrease',
                 'discounting': 'discounting'}
