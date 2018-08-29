@@ -906,12 +906,12 @@ ip_procedure:
 ###############################################################################
 
 experiment:
-    # Number of catch trials (per framing block) on which people should
+    # Number of catch trials (for the entire experiment) on which people should
     # choose SS
-    n_catch_trial_ss: 4
-    # Number of catch trials (per framing block) on which people should choose LL
-    n_catch_trial_ll: 4
-    # Number instruction manipulation check trials (per framing block)
+    n_catch_trial_ss: 8
+    # Number of catch trials (for the entire experiment) on which people should choose LL
+    n_catch_trial_ll: 8
+    # Number instruction manipulation check trials (for the entire experiment)
     n_instr_manip_check_trial: 0
     # Interval between instruction stimulus and SS & LL option stimuli, in seconds
     isi_dur: 0
