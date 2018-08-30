@@ -1018,7 +1018,7 @@ feedback:
                 feedbackNeg: "Remember: pay attention to each option's delay"
             discounting:
                 enable: True
-                criterion: [0, 90] # The IP for the longest delay should be
+                criterion: [0, 97] # The IP for the longest delay should be
                                # in between these percentages of the LL amount
                                # Johnson & Bickel (2008) proposed a value of
                                # [0 90]

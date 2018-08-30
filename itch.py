@@ -2193,10 +2193,37 @@ def make_trial_list(config, stage_id):
 
         trial_list['m_s'] = None
 
+
+
         # Add m_s
+
+        # For people how hardly discount, use a different
+        if indifference_points[t_ls[-1]] > \
+            round(config['ip_procedure']['m_l'] - (len(t_ls)) * m_s_step,2):
+            print('Indifference point for longest delay too high to '
+                  'construct m_s offers above the indifference point')
+            pp.core.quit()
+
+        elif indifference_points[t_ls[-1]] < \
+                (len(t_ls) + 1) * m_s_step:
+            print('Indifference point for longest delay too low to '
+                  'construct m_s offers below the indifference point')
+            pp.core.quit()
+        elif indifference_points[t_ls[-1]] > \
+            round(config['ip_procedure']['m_l'] - (2 * len(t_ls)) *
+                  m_s_step,2):
+            multi_factor = 1
+
+        elif indifference_points[t_ls[-1]] < \
+                round((2 * len(t_ls)) * m_s_step, 2):
+            multi_factor = 1
+        else:
+            multi_factor = 2
+
+
         for i_t_l, t_l in enumerate(t_ls):
 
-            adjustment_factor = 2 * (i_t_l + 1)
+            adjustment_factor = multi_factor * (i_t_l + 1)
             m_s = {'below_ip': indifference_points[t_l] - adjustment_factor * m_s_step,
                    'at_ip': indifference_points[t_l],
                    'above_ip': indifference_points[t_l] + adjustment_factor * m_s_step
