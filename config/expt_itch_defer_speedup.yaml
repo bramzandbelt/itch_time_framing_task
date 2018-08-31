@@ -733,7 +733,7 @@ stim_config:
         #
         name: feedback
 
-        color: [255,255,0]
+        color: [255,255,255]
         opacity: 1
         font: Helvetica
         height: 1
