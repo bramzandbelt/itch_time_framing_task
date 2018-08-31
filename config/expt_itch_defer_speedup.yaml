@@ -584,7 +584,7 @@ stim_config:
         font: Helvetica
         height: 1
         ori: 0
-        pos: [0, 4]
+        pos: [0, 3]
 
     # ss: dictionary
     #
@@ -683,10 +683,10 @@ stim_config:
         # should be between double-quotes (e.g. ["\u2666","\u2665"]).
         #
         fill_color: [128, 128, 128]
-        line_color: [255, 255, 0]
+        line_color: [255, 255, 255]
         line_width: 2
         opacity: 1
-        width: 8
+        width: 10
         height: 4
         ori: 0
         pos: [-6,0]
@@ -710,10 +710,10 @@ stim_config:
         # should be between double-quotes (e.g. ["\u2666","\u2665"]).
         #
         fill_color: [128, 128, 128]
-        line_color: [255, 255, 0]
+        line_color: [255, 255, 255]
         line_width: 2
         opacity: 1
-        width: 8
+        width: 10
         height: 4
         ori: 0
         pos: [6,0]
@@ -738,7 +738,7 @@ stim_config:
         font: Helvetica
         height: 1
         ori: 0
-        pos: [0,2.5]
+        pos: [0, 4.5]
 
     # iti: dictionary
     #
