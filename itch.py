@@ -1536,7 +1536,7 @@ def init_config(runtime, mod_dir):
         config['ip_procedure']['enable'] = False
 
     config['ip_procedure']['m_l'] = \
-        2 ** (config['ip_procedure']['n_staircase_trial'] + 1) * \
+        2 ** (config['ip_procedure']['n_staircase_trial']) * \
         config['ip_procedure']['step_size']
 
     ###########################################################################
@@ -2199,26 +2199,27 @@ def make_trial_list(config, stage_id):
 
         # For people how hardly discount, use a different
         if indifference_points[t_ls[-1]] > \
-            round(config['ip_procedure']['m_l'] - (len(t_ls)) * m_s_step,2):
+            round(config['ip_procedure']['m_l'] - (len(t_ls)) * 0.5 * \
+                m_s_step,2):
             print('Indifference point for longest delay too high to '
                   'construct m_s offers above the indifference point')
             pp.core.quit()
 
         elif indifference_points[t_ls[-1]] < \
-                (len(t_ls) + 1) * m_s_step:
+                (len(t_ls) + 1) * 0.5 * m_s_step:
             print('Indifference point for longest delay too low to '
                   'construct m_s offers below the indifference point')
             pp.core.quit()
         elif indifference_points[t_ls[-1]] > \
-            round(config['ip_procedure']['m_l'] - (2 * len(t_ls)) *
+            round(config['ip_procedure']['m_l'] - (len(t_ls)) *
                   m_s_step,2):
-            multi_factor = 1
+            multi_factor = 0.5
 
         elif indifference_points[t_ls[-1]] < \
-                round((2 * len(t_ls)) * m_s_step, 2):
-            multi_factor = 1
+                round((len(t_ls)) * m_s_step, 2):
+            multi_factor = 0.5
         else:
-            multi_factor = 2
+            multi_factor = 1
 
 
         for i_t_l, t_l in enumerate(t_ls):
@@ -2238,11 +2239,11 @@ def make_trial_list(config, stage_id):
             # indifference point:
 
             if m_s['below_ip'] == 0:
-                adjustment_factor = (i_t_l + 1)
-                m_s['below_ip'] = indifference_points[t_l] - adjustment_factor * m_s_step
+                m_s['below_ip'] = indifference_points[t_l] - \
+                                  0.5 * adjustment_factor * m_s_step
             elif m_s['above_ip'] == config['ip_procedure']['m_l']:
-                adjustment_factor = (i_t_l + 1)
-                m_s['above_ip'] = indifference_points[t_l] + adjustment_factor * m_s_step
+                m_s['above_ip'] = indifference_points[t_l] + \
+                                  0.5 * adjustment_factor * m_s_step
 
             for m_s_cat in m_s_cats:
 

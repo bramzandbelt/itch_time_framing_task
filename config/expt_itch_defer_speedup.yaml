@@ -869,7 +869,7 @@ practice:
 # INDIFFERENCE POINT PROCEDURE
 ###############################################################################
 # Note that the monetary amount of the LL option (m_l) is computed from
-# step_size and n_staircase_trial as m_l = 2 ** (n_staircase_trial + 1) *
+# step_size and n_staircase_trial as m_l = 2 ** (n_staircase_trial) *
 # step_size. This ensures that proper experimental values for m_s can be
 # computed below,  around, and above the indifference point
 
@@ -905,7 +905,7 @@ ip_procedure:
     # Intertrial interval duration, in seconds (minimum of 1-2 screen refresh
     # times)
     iti_dur: 0.2 # 1
-    step_size: 0.17
+    step_size: 0.34
 
 ###############################################################################
 # EXPERIMENT
