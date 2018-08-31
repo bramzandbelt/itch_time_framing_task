@@ -3045,7 +3045,7 @@ def run_trial(config,wait_for_trigger, hub,trial_log,
     if trial_log['trial_type'] == 'instr_check':
         default_instruction = stimuli['choice_instr'][0].text
         manip_instruction = default_instruction.replace('Choose between:',
-                                                      'Press return:')
+                                                      'PRESS RETURN:')
         stimuli['choice_instr'][0].setText(manip_instruction)
 
 
