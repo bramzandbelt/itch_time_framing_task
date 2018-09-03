@@ -95,7 +95,7 @@ monitor_devices:
         # the unit_type of mm.
         #
         default_eye_distance:
-            surface_center: 550
+            surface_center: 700
             unit_type: mm
 
         # If the Display device should open a PsychoPy Monitor Configuration
