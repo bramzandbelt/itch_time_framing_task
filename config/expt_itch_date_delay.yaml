@@ -6,7 +6,7 @@
 #
 # A short but non-cryptic name of the experiment.
 #
-title: 'Cognitive mechanisms time framing effects in intertemporal choice'
+title: 'Cognitive mechanisms of the defer-speedup and date-delay framing effects in intertemporal choice'
 
 # code: string
 #
@@ -16,7 +16,7 @@ title: 'Cognitive mechanisms time framing effects in intertemporal choice'
 #
 # Here, the code is equal to the DCCN project identifier
 #
-code: 'pilot'
+code: '3017051.01'
 
 # ethics_protocol_id: string
 #
